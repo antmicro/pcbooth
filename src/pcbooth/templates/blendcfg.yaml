@@ -1,0 +1,58 @@
+default: &default
+  SETTINGS:
+    SAMPLES: 32                     # quality of final render, influences rendering speed
+    FPS: 25                         # animations FPS; value lower than 5 may result in blurred results
+    IMAGE_WIDTH: 1920
+    IMAGE_HEIGHT: 1920
+    VIDEO_WIDTH: 740
+    VIDEO_HEIGHT: 740
+    THUMBNAIL_WIDTH: 320
+    THUMBNAIL_HEIGHT: 320
+    KEEP_PNGS: False
+    THUMBNAILS: True                # enables thumbnails for eligible outputs
+    IMAGE_FORMAT: png
+    VIDEO_FORMAT: webm
+    RENDER_DIR: blender_renders     # default directory name for storing renders
+    FAB_DIR: fab                    # default directory name containing fabrication files
+    PRJ_EXTENSION: .kicad_pro   # default extension of project based on which kbe generates name of .blend
+
+  STUDIO_EFFECTS:
+    SAVE_SCENE: False               # saves *_scene.blend file with entire studio and camera setup included
+    BACKGROUND: paper_black         # name of .blend file from 'antmicro-blender-models/lib/backgrounds' containing background
+                                    # use Transparent to render w/o background; can be multiple values separated by comma
+    LIGHTS_COLOR: FFFFFF
+    LIGHTS_INTENSITY: 17000
+    ENVTEXTURE_INTENSITY: 0.2
+    DEPTH_OF_FIELD: True
+    LED_ON: False
+
+  CAMERAS:
+    ORTHO_TYPE: False               # enables orthographic cameras
+    TOP: False
+    ISO: False
+    FRONT: False
+    LEFT: False
+    RIGHT: False
+    PHOTO1: True
+    PHOTO2: False
+    CUSTOM: False
+
+  OBJECT:
+    TOP: True
+    BOTTOM: False
+    REAR: False
+    ROTATE_HORIZONTALLY: True
+    RENDERED_OBJ: 
+
+  OUTPUT:
+    STATIC: True
+    STACKUP: False                    # if True, requires stackup.json output, generates board split into layers
+    KEYFRAMES: True
+    #HOTAREAS: False                   # if True, hotareas for components will be rendered for picked views
+    #ANIMATIONS: False
+    #TRANSITIONS: False, Renders       # options = All - renders all 28 transitions, Renders - renders transitions for views picked in RENDERS settings, Iso - renders front/rear/bottom transitions in isometric view
+    #EXPLODEDVIEW: False               # for assembly-type models only, enables assembly/dissasembly animation, will grab existing keyframes or attempt to generate own  
+
+
+
+    
