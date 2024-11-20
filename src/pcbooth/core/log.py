@@ -40,3 +40,5 @@ def set_logging(use_debug: bool) -> None:
     stdout_handler.setLevel(level)
     stdout_handler.setFormatter(CustomFormatter())
     root.addHandler(stdout_handler)
+
+    logging.getLogger("hiyapyco").setLevel(logging.WARNING)

@@ -8,20 +8,28 @@ from typing import Dict, Any, List
 import pcbooth.modules.fileIO as fio
 import pcbooth.core.blendcfg as bcfg
 import pcbooth.modules.custom_utilities as cu
+import pcbooth.modules.bounding_box as bb
 
 blendcfg: Dict[str, Any] = {}
+prj_path: str = ""
+pcbt_dir_path: str = ""
+
 fab_path: str = ""
+env_texture_path: str = ""
+renders_path: str = ""
 PCB_name: str = ""
 pcb_blend_path: str = ""
-pcbt_dir_path: str = ""
-rendered_obj: str | None
-top_components: List[str | None]
-bottom_components: List[str | None]
-isPCB: bool
-isComponent: bool
-isAssembly: bool
-isUnknown: bool
-display_rot: int
+
+isPCB: bool = False
+isCollection: bool = False
+isObject: bool = False
+isUnknown: bool = True
+
+rendered_obj: bpy.types.Object = None
+display_rot: int = 0
+top_components: List[str] = []
+bottom_components: List[str] = []
+
 args: argparse.Namespace
 
 
@@ -37,8 +45,8 @@ def init_global(arguments: argparse.Namespace) -> None:
 
     """
 
-    global prj_path
     global blendcfg
+    global prj_path
     global pcbt_dir_path
 
     global args
@@ -53,7 +61,7 @@ def init_global(arguments: argparse.Namespace) -> None:
 
     configure_paths(arguments)
     cu.open_blendfile(pcb_blend_path)
-    configure_model()
+    configure_model_data()
 
     args = arguments
 
@@ -70,17 +78,16 @@ def configure_paths(arguments: argparse.Namespace) -> None:
     global fab_path
     global env_texture_path
     global renders_path
+    global animations_path
     global pcb_blend_path
     global PCB_name
-    global prj_path
 
     env_texture_path = pcbt_dir_path + "/templates/studio_small_03_4k.exr"
     renders_path = prj_path + blendcfg["SETTINGS"]["RENDER_DIR"] + "/"
-    # anim_path = project_path + "assets/previews/"
+    animations_path = prj_path + blendcfg["SETTINGS"]["ANIMATION_DIR"] + "/"
     # hotareas_path = project_path + "assets/hotareas/"
 
-    # Determine the name of the PCB to use as a name for the .blend
-
+    # Determine blend_path
     if arguments.blend_path is None:
         project_extension = blendcfg["SETTINGS"]["PRJ_EXTENSION"]
         fab_path = prj_path + blendcfg["SETTINGS"]["FAB_DIR"] + "/"
@@ -90,7 +97,6 @@ def configure_paths(arguments: argparse.Namespace) -> None:
             )
         PCB_name = fio.read_pcb_name(prj_path, project_extension)
         pcb_blend_path = fab_path + PCB_name + ".blend"
-
     else:
         PCB_name = arguments.blend_path.split("/")[-1].replace(".blend", "")
         pcb_blend_path = path.abspath(arguments.blend_path)
@@ -101,63 +107,108 @@ def configure_paths(arguments: argparse.Namespace) -> None:
         )
 
 
-def configure_model():
+def configure_model_data():
     """ """
     global isPCB
-    global isAssembly
-    global isCustom
+    global isCollection
+    global isObject
     global isUnknown
     global rendered_obj
     global display_rot
     global top_components
     global bottom_components
 
-    rendered_obj = None
-    isPCB = False
-    isAssembly = False
-    isCustom = False
-    isUnknown = True
-    display_rot = 0
-    top_components = []
-    bottom_components = []
+    obj_type, rendered_obj_name = "", ""
+    if blendcfg["OBJECT"]["RENDERED_OBJECT"]:
+        obj_type = blendcfg["OBJECT"]["RENDERED_OBJECT"][0]
+        rendered_obj_name = blendcfg["OBJECT"]["RENDERED_OBJECT"][1]
 
-    with bpy.data.libraries.load(pcb_blend_path) as (data_from, _):
-        if blendcfg["OBJECT"]["RENDERED_OBJ"]:
-            logger.info(
-                f"Setting {rendered_obj} as rendered object (picked by user in blendcfg)"
-            )
-            isCustom = True
-            isUnknown = False
-            rendered_obj = bpy.data.objects.get(
-                blendcfg["OBJECT"]["RENDERED_OBJ"], None
-            )
-            display_rot = cu.get_display_rot(rendered_obj)
+    # single custom object picked using RENDERED_OBJECT setting
+    if obj_type == "Object":
+        logger.info(f"Rendering from object: {rendered_obj_name}")
+        configure_as_singleobject(rendered_obj_name, adjust_pos=False)
+        return
 
-            return
+    # single collection picked using RENDERED_COLLECTION setting:
+    # will work as Assembly collection before
+    if obj_type == "Collection":
+        logger.info(f"Rendering from collection: {rendered_obj_name}")
+        configure_as_collection(rendered_obj_name)
+        return
 
-        elif "Assembly" in data_from.collections:
-            isAssembly = True
-            isUnknown = False
-            logger.info(f"Recognized assembly type model.")
-            top_components, bottom_components = cu.get_top_bottom_component_lists(
-                enable_all=True
-            )
-            # rendered object is all in Assembly collection
-            return
+    # PCB generated using gerber2blend
+    # can be without components
+    if bpy.data.collections.get("Board") and bpy.data.objects.get(PCB_name):
+        logger.info("PCB type model was recognized.")
+        configure_as_PCB(PCB_name)
+        return
 
-        elif "Board" in data_from.collections and PCB_name in data_from.objects:
-            logger.info(f"Recognized PCB type model.")
-            isPCB = True
-            isUnknown = False
-            rendered_obj = bpy.data.objects.get(PCB_name, None)
-            top_components, bottom_components = cu.get_top_bottom_component_lists()
-            return
+    # Unknown type model
+    # check if there's only one object
+    # if there's more, treat it as collection
+    logger.info("Unknown type model was recognized.")
+    if len(bpy.data.objects) == 1:
+        rendered_obj_name = bpy.data.objects[0].name
+        configure_as_singleobject(rendered_obj_name, adjust_pos=True)
+    else:
+        configure_as_unknown()
 
-        else:
-            logger.warning(
-                "This file doesn't contain any of supported collections ('Board', 'Assembly') and the custom rendered object is not specified."
-            )
-            logger.warning("It will be processed as unknown type model.")
-            # gets first collection first object
-            rendered_obj = bpy.context.scene.collection.children[0].objects[0]
-            display_rot = cu.get_display_rot(rendered_obj)
+
+def configure_as_PCB(object_name):
+    global rendered_obj, top_components, bottom_components, isUnknown, isPCB
+    rendered_obj = bpy.data.objects.get(object_name, "")
+    if not rendered_obj:
+        raise RuntimeError(
+            f"{object_name} object could not be found in Blender model data."
+        )
+    top_components, bottom_components = cu.get_top_bottom_component_lists()
+    isUnknown = False
+    isPCB = True
+    components_col = bpy.data.collections.get("Components")
+    components = [object for object in components_col.objects]
+    bbox_obj = bb.generate_bbox(components + [rendered_obj])
+    cu.parent_list_to_object([bbox_obj], rendered_obj)
+
+
+def configure_as_collection(collection_name):
+    global rendered_obj, top_components, bottom_components, isUnknown, isCollection
+    rendered_col = bpy.data.collections.get(collection_name, "")
+    if not rendered_col:
+        raise RuntimeError(
+            f"{collection_name} collection could not be found in Blender model data."
+        )
+    components = [object for object in rendered_col.objects]
+    rendered_obj = bb.generate_bbox(components)
+    top_components, bottom_components = cu.get_top_bottom_component_lists(
+        components, enable_all=True
+    )
+    isUnknown = False
+    isCollection = True
+    cu.link_obj_to_collection(rendered_obj, rendered_col)
+    cu.parent_list_to_object(components, rendered_obj)
+
+
+def configure_as_singleobject(object_name, adjust_pos=True):
+    global rendered_obj, top_components, bottom_components, isUnknown, isObject, display_rot
+    rendered_obj = bpy.data.objects.get(object_name, "")
+    if not rendered_obj:
+        raise RuntimeError(
+            f"{object_name} object could not be found in Blender model data."
+        )
+    isUnknown = False
+    isObject = True
+    if adjust_pos:
+        display_rot = rendered_obj.get("DISPLAY_ROT", 0)
+        cu.center_on_scene(rendered_obj)
+    else:
+        display_rot = 0
+
+
+def configure_as_unknown():
+    global rendered_obj, top_components, bottom_components
+    components = [object for object in bpy.data.objects]
+    rendered_obj = bb.generate_bbox(components)
+    top_components, bottom_components = cu.get_top_bottom_component_lists(
+        components, enable_all=True
+    )
+    cu.parent_list_to_object(components, rendered_obj)

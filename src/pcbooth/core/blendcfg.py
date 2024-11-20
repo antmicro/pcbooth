@@ -5,6 +5,7 @@ import os.path
 from shutil import copyfile
 from typing import Any, Callable, Dict, Optional
 import hiyapyco  # type: ignore
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +43,30 @@ class Field:
         self.optional = optional
 
 
+def parse_data_block_strings(arg: str) -> list[str] | str:
+    """Parse data-block string and split into separate values by any separator."""
+    pattern = r"^(Collection|Object)([^\w\s])(.+)$"
+    if match := re.match(pattern, arg):
+        return [match.group(1), match.group(3)]
+    return arg
+
+
+def parse_strings(arg: str) -> list[str]:
+    """Parse string and split into separate values by comma separator."""
+    return arg.replace(",", "").split()
+
+
+def hex_to_rgba(hex_number: str, alpha: bool = True) -> tuple[float, ...]:
+    """Convert hex number to RGBA."""
+    rgb = []
+    for i in (0, 2, 4):
+        decimal = int(hex_number[i : i + 2], 16)
+        rgb.append(decimal / 255)
+    if alpha:
+        rgb.append(1)
+    return tuple(rgb)
+
+
 # Schema for blendcfg.yaml file
 CONFIGURATION_SCHEMA = {
     "SETTINGS": {
@@ -58,6 +83,7 @@ CONFIGURATION_SCHEMA = {
         "IMAGE_FORMAT": Field("string"),
         "VIDEO_FORMAT": Field("string"),
         "RENDER_DIR": Field("string"),
+        "ANIMATION_DIR": Field("string"),
         "FAB_DIR": Field("string"),
         "PRJ_EXTENSION": Field("string"),
     },
@@ -86,9 +112,8 @@ CONFIGURATION_SCHEMA = {
         "BOTTOM": Field("bool"),
         "REAR": Field("bool"),
         "ROTATE_HORIZONTALLY": Field("bool"),
-        "RENDERED_OBJ": Field(
-            "string",
-            optional=True,
+        "RENDERED_OBJECT": Field(
+            "data_block", optional=True, conv=parse_data_block_strings
         ),
     },
     "OUTPUT": {
@@ -131,20 +156,11 @@ def is_color_preset(arg: str | list[str] | None) -> bool:
     return False
 
 
-def hex_to_rgba(hex_number: str, alpha: bool = True) -> tuple[float, ...]:
-    """Convert hex number to RGBA."""
-    rgb = []
-    for i in (0, 2, 4):
-        decimal = int(hex_number[i : i + 2], 16)
-        rgb.append(decimal / 255)
-    if alpha:
-        rgb.append(1)
-    return tuple(rgb)
-
-
-def parse_strings(arg: str) -> list[str]:
-    """Parse string and split into separate values by comma separator."""
-    return arg.replace(",", "").split()
+def is_data_block(arg: str | list[str] | None) -> bool:
+    """Check if given string represents Blender data-block (Collection or Object)."""
+    if arg is None:
+        return False
+    return len(arg) == 2
 
 
 def check_throw_error(cfg: Dict[str, Any], args: list[str], schema: Field) -> None:
@@ -199,8 +215,11 @@ def check_throw_error(cfg: Dict[str, Any], args: list[str], schema: Field) -> No
             )
             raise RuntimeError("Configuration invalid") from e
 
-    not_schema_type_err = f"[{args[0]}][{args[1]}] is not a {schema.type}"
-    color_type_err = f"[{args[0]}][{args[1]}] is not a color, should be hex color value"
+    not_schema_type_err = f"{val} is not a {schema.type}"
+    color_type_err = f"{val} is not a color, should be hex color value"
+    data_block_type_err = (
+        f"{val} is not a valid <type>/<name> string defining Blender data-block"
+    )
 
     match schema.type:
         case "color":
@@ -217,6 +236,8 @@ def check_throw_error(cfg: Dict[str, Any], args: list[str], schema: Field) -> No
             assert isinstance(val, tuple), not_schema_type_err
         case "string":
             assert isinstance(val, str), not_schema_type_err
+        case "data_block":
+            assert is_data_block(val), data_block_type_err
         case "list[str]":
             assert isinstance(val, list), not_schema_type_err
             assert all(isinstance(x, str) for x in val), not_schema_type_err

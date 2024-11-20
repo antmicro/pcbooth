@@ -13,6 +13,7 @@ default: &default
     IMAGE_FORMAT: png
     VIDEO_FORMAT: webm
     RENDER_DIR: blender_renders     # default directory name for storing renders
+    ANIMATION_DIR: assets/previews     # default directory name for storing renders
     FAB_DIR: fab                    # default directory name containing fabrication files
     PRJ_EXTENSION: .kicad_pro   # default extension of project based on which kbe generates name of .blend
 
@@ -42,7 +43,7 @@ default: &default
     BOTTOM: False
     REAR: False
     ROTATE_HORIZONTALLY: True
-    RENDERED_OBJ: 
+    RENDERED_OBJECT: 
 
   OUTPUT:
     STATIC: True

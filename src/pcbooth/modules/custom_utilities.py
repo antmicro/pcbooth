@@ -1,9 +1,9 @@
 import bpy
-import bmesh
 from mathutils import Vector, kdtree
 import logging
 import pcbooth.modules.config as config
 from math import radians
+from typing import List, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -25,15 +25,19 @@ def open_blendfile(blendfile: str) -> None:
     bpy.ops.wm.open_mainfile(filepath=blendfile)
 
 
-def get_top_bottom_component_lists(enable_all: bool = False):
+def get_top_bottom_component_lists(
+    objects: List[bpy.types.Object] = [], enable_all: bool = False
+) -> Tuple[bpy.types.Object, bpy.types.Object]:
+    """
+    Get top and bottom component lists using char stored in 'PCB_Side' custom property.
+    This custom property is saved in objects when they're imported using picknblend tool.
+    If `enable_all` argument is set to true, all available components passed to function will be added to both of the lists.
+    """
     top_comps = []
     bot_comps = []
     if enable_all:
-        assembly = bpy.data.collections.get("Assembly", None)
-        if not assembly:
-            return top_comps, bot_comps
-        top_comps = [obj for obj in assembly.objects if obj.name != "assembly_bbox"]
-        bot_comps = [obj for obj in assembly.objects if obj.name != "assembly_bbox"]
+        top_comps = [obj for obj in objects if obj.name != "BBOX"]
+        bot_comps = top_comps.copy()
     else:
         components = bpy.data.collections.get("Components")
         if not components:
@@ -45,11 +49,54 @@ def get_top_bottom_component_lists(enable_all: bool = False):
                 top_comps.append(comp)
             elif comp["PCB_Side"] == "B":
                 bot_comps.append(comp)
+    logger.debug(f"Read top components: {top_comps}")
+    logger.debug(f"Read bot components: {bot_comps}")
     return top_comps, bot_comps
 
 
-def get_display_rot(obj):
-    return obj.get("DISPLAY_ROT", None)
+def center_on_scene(object: bpy.types.Object) -> None:
+    """
+    Move object's origin point to its geometric center and move the object to point (0,0,0) on scene.
+    This is needed for nice animations when object is being rotated about the origin point.
+    """
+    object.select_set(True)
+    bpy.context.view_layer.objects.active = object
+    bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY", center="BOUNDS")
+    object.location[:] = [0, 0, 0]
+    bpy.ops.object.transform_apply()
+    bpy.ops.object.select_all(action="DESELECT")
+
+
+def get_root_object(object: bpy.types.Object) -> bpy.types.Object | None:
+    """Get source object of the linked nested object structure"""
+    library_name = object.library.name.replace(".blend", "")
+    lib_obj = bpy.data.objects.get(library_name)
+    return lib_obj
+
+
+def parent_list_to_object(
+    child_objs: List[bpy.types.Object],
+    parent: bpy.types.Object,
+    skip_lights: bool = True,
+    skip_cameras: bool = True,
+) -> None:
+    """Parent all objects in a list to another object."""
+    for obj in child_objs:
+        if obj.parent is not None:
+            continue
+        if skip_lights and obj.type == "LIGHT":
+            continue
+        if skip_cameras and obj.type == "CAMERA":
+            continue
+        if obj.library:
+            continue
+
+        # set parent for all child objects
+        obj.select_set(True)
+        parent.select_set(True)
+        bpy.context.view_layer.objects.active = parent  # active obj will be parent
+        bpy.ops.object.parent_set(keep_transform=True)
+        bpy.ops.object.select_all(action="DESELECT")
 
 
 ###
@@ -110,6 +157,7 @@ def verts_in(kd, add_set):
     return False
 
 
+# probably not used
 def get_bbox(obj, arg):
     bpy.ops.object.select_all(action="DESELECT")
     bpy.context.view_layer.objects.active = obj
@@ -126,124 +174,8 @@ def get_bbox(obj, arg):
         return bbox_vert
 
 
-# for getting bbox of all linked objects on scene
-def get_bbox_linked(collection):
-    vertices = []
-    edges = []
-    faces = []
-    collection_objects = [obj.name for obj in collection.objects]
-    for obj in bpy.data.objects:
-        if obj.type == "LIGHT":
-            continue
-        if obj.library:  # if object comes from linked library
-            lib_name = obj.library.name.replace(".blend", "")
-            if lib_name in collection_objects:  # if library is from found collection
-                logger.debug(
-                    f"Found linked object {obj.name} from {lib_name} lib in {collection.name} Collection"
-                )
-                lib_obj = bpy.data.objects.get(lib_name)
-                bbox = [
-                    lib_obj.matrix_world @ Vector(corner) for corner in obj.bound_box
-                ]  # applies entire object's source library transformation matrix
-                vertices.extend(bbox)
-        elif obj.name in collection_objects:  # if object is locally added
-            logger.debug(
-                f"Found local object {obj.name} in {collection.name} Collection"
-            )
-            bbox = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]
-            vertices.extend(bbox)
-    if not len(vertices):
-        raise (f"{collection.name} collection is empty. Aborting!")
-    mesh = bpy.data.meshes.new("assembly_bbox")
-    bbox_verts = calculate_bbox(vertices)
-    mesh.from_pydata(bbox_verts, edges, faces)
-    mesh.update()
-    obj = bpy.data.objects.new("assembly_bbox", mesh)
-    bpy.context.scene.collection.objects.link(obj)
-    return obj
-
-
 # calculates bounding box out of list of Vector(x,y,z)
-def calculate_bbox(vector):
-    # Initialize min and max values with the coordinates of the first point
-    min_x, min_y, min_z = max_x, max_y, max_z = vector[0].x, vector[0].y, vector[0].z
-
-    # Update min and max values by iterating through the list of points
-    for point in vector:
-        min_x = min(min_x, point.x)
-        min_y = min(min_y, point.y)
-        min_z = min(min_z, point.z)
-        max_x = max(max_x, point.x)
-        max_y = max(max_y, point.y)
-        max_z = max(max_z, point.z)
-    # Construct the 8-point bounding box coordinates
-    bounding_box = [
-        (min_x, min_y, min_z),
-        (min_x, max_y, min_z),
-        (max_x, max_y, min_z),
-        (max_x, min_y, min_z),
-        (min_x, min_y, max_z),
-        (min_x, max_y, max_z),
-        (max_x, max_y, max_z),
-        (max_x, min_y, max_z),
-    ]
-    return bounding_box
-
-
-def recalc_normals(obj):
-    obj.select_set(True)
-    bpy.context.view_layer.objects.active = obj
-    bpy.ops.object.mode_set(mode="EDIT")
-    bpy.ops.mesh.select_all(action="SELECT")
-    bpy.ops.mesh.normals_make_consistent(inside=False)
-    bpy.ops.mesh.select_all(action="DESELECT")
-
-    # make sharp edges
-    # select edges on board Edges
-    bm = bmesh.from_edit_mesh(obj.data)
-    for edge in bm.edges:
-        if len(edge.link_faces) == 2:
-            if edge.calc_face_angle() > 1.5:  # angle between faces in radians
-                edge.select_set(True)
-    bpy.ops.mesh.mark_sharp()
-    bpy.ops.object.mode_set(mode="OBJECT")
-    bpy.ops.object.select_all(action="DESELECT")
-
-
-def face_sel(obj, pos, edge_verts=[]):
-    bpy.context.view_layer.objects.active = obj
-    mesh = obj.data
-    bpy.ops.object.mode_set(mode="EDIT")
-    bpy.ops.mesh.select_mode(type="FACE")
-    bm = bmesh.from_edit_mesh(mesh)
-    bm.faces.ensure_lookup_table()
-    kd = make_kd_tree(edge_verts)
-    for face in obj.data.polygons:
-        if pos == "edge":
-            # check vertical faces
-            if abs(face.normal.z) <= 0.5:
-                # check if face contains vertices from list
-                face_edges = []
-                for ind in face.vertices:
-                    face_edges.append(obj.data.vertices[ind].co)
-                if verts_in(kd, face_edges):
-                    bm.faces[face.index].select = True
-        elif pos == "top":
-            bm.faces[face.index].select = face.normal.z > 0.5
-        elif pos == "bot":
-            bm.faces[face.index].select = face.normal.z < -0.5
-        else:
-            logger.error("Specify pos")
-    bmesh.update_edit_mesh(mesh)
-
-
-def face_desel(obj):
-    mesh = obj.data
-    bpy.ops.object.mode_set(mode="EDIT")
-    bm = bmesh.from_edit_mesh(mesh)
-    bm.faces.ensure_lookup_table()
-    for face in obj.data.polygons:
-        bm.faces[face.index].select = False
+# USED
 
 
 def select_PCB():
@@ -291,12 +223,12 @@ def remove_collection(name):
     bpy.data.collections.remove(remCol)
 
 
-def link_obj_to_collection(obj, target_coll):
-    # Loop through all collections the obj is linked to
-    for coll in obj.users_collection:
-        # Unlink the object
+def link_obj_to_collection(
+    obj: bpy.types.Object, target_coll: bpy.types.Collection
+) -> None:
+    """Loop through all collections the obj is linked to and unlink it from there, then link to targed collection."""
+    for coll in obj.users_collection:  # type: ignore
         coll.objects.unlink(obj)
-    # Link object to the target collection
     target_coll.objects.link(obj)
 
 
