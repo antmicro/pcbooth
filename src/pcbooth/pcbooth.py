@@ -5,7 +5,7 @@ import argparse
 import logging
 import pcbooth.modules.config as config
 import pcbooth.modules.custom_utilities as cu
-import pcbooth.modules.studio as st
+from pcbooth.modules.studio import Studio
 import pcbooth.modules.fileIO as fio
 from pcbooth.modules.animation import make_animations
 from pcbooth.modules.hardware_portal import make_transitions, make_stackup
@@ -73,6 +73,7 @@ def main():
             return 0
 
         config.init_global(args)
+        model = Studio(config.pcb_blend_path)
         cu.save_pcb_blend("test.blend")
 
     except Exception:

@@ -1,188 +1,169 @@
-from typing import Literal
+"""
+Studio generation module. Handles loading rendered Blender model and configures itself according to read data. 
+Adds cameras, lights and backgrounds.
+"""
+
 import bpy
-import pcbooth.modules.renderer as renderer
 import pcbooth.modules.config as config
-from pcbooth.modules.camera import add_cameras, update_all_camera_location
-from pcbooth.modules.light import add_light
-from pcbooth.modules.background import (
-    add_background,
-    update_background,
-    load_env_texture,
-    reset_background_location,
-)
-from math import radians
 from mathutils import Vector, Matrix
+from math import radians
 import logging
-from pcbooth.modules.custom_utilities import apply_all_transform_obj
+import pcbooth.modules.custom_utilities as cu
+import pcbooth.modules.bounding_box as bb
+from typing import List, Dict
 
 logger = logging.getLogger(__name__)
 
 
-def rotate_all(pcb_parent):
-    if pcb_parent.dimensions.x < pcb_parent.dimensions.y:
-        logger.info("Rotating the PCB horizontally.")
-        pcb_parent.rotation_euler.z -= radians(90)
-        apply_all_transform_obj(pcb_parent)
-        # rotate camera_custom object if present
-        cam_obj = bpy.data.objects.get("camera_custom")
-        if cam_obj is not None:
-            logger.info("Rotating 'camera_custom' to follow PCB")
-            cam_obj.rotation_euler.z -= radians(90)
-            cam_obj.location.x, cam_obj.location.y = (
-                cam_obj.location.y,
-                -cam_obj.location.x,
-            )
-
-
-def add_studio(pcb_parent):
-    renderer.init_setup()
-    studioCol = bpy.data.collections.new("Studio")
-    bpy.context.scene.collection.children.link(studioCol)
-    studioCol.children.link(add_cameras(pcb_parent))
-    studioCol.children.link(add_light(pcb_parent))
-    for bg in config.blendcfg["EFFECTS"]["BACKGROUND"]:
-        if bg != "Transparent":
-            studioCol.children.link(
-                add_background(
-                    pcb_parent, bg, config.blendcfg["EFFECTS"]["BACKGROUND"][bg]
-                )
-            )
-    load_env_texture()
-    # transparent background/environmental texture
-    bpy.context.scene.render.film_transparent = True
-    # if custom camera present in file, ensure it has a proper focal length
-    cam_obj = bpy.data.objects.get("camera_custom")
-    if cam_obj is not None:
-        cam_obj.data.lens = 105
-        cam_obj.data.clip_start = 0.1
-        cam_obj.data.clip_end = 15000
-    return studioCol
-
-
-def set_space_shading(Type):
-    for area in bpy.context.screen.areas:
-        if area.type == "VIEW_3D":
-            for space in area.spaces:
-                if space.type == "VIEW_3D":
-                    space.shading.type = Type
-
-
-def obj_set_rotation(
-    pcb,
-    direction: Literal["T", "B", "R"] = "T",
-    initial_rot: Vector | None = None,
-):
+class Studio:
     presets = {
-        "T": (radians(0), radians(0), radians(0)),
-        "B": (radians(0), radians(180), radians(0)),
-        "R": (radians(0), radians(0), radians(180)),
+        "TOP": (radians(0), radians(0), radians(0)),
+        "BOTTOM": (radians(0), radians(180), radians(0)),
+        "REAR": (radians(0), radians(0), radians(180)),
     }
-    pcb.rotation_mode = "XYZ"
-    if initial_rot:
-        pcb.rotation_euler = initial_rot + Vector(presets[direction])
-    else:
-        pcb.rotation_euler = Vector(presets[direction])
-    update_all_camera_location(pcb)
 
+    def __init__(self, pcb_blend_path: str):
+        cu.open_blendfile(pcb_blend_path)
+        self.collection = cu.get_collection("Studio")
 
-def studio_prepare(pcb_parent, background, cam_obj):
-    update_all_camera_location(pcb_parent)
-    if not isinstance(background, str):
-        update_background(pcb_parent, background, cam_obj)
-    # update_env_texture(cam_obj)
+        self.is_pcb: bool = False
+        self.is_collection: bool = False
+        self.is_object: bool = False
+        self.is_unknown: bool = True
+        self.rendered_obj: bpy.types.Object = None
+        self.display_rot: int = 0
+        self.top_components: List[bpy.types.Object] = []
+        self.bottom_components: List[bpy.types.Object] = []
+        self.cameras: List[bpy.types.Object] = []
+        self.backgrounds: List[bpy.types.Object] = []
+        self.positions: Dict[str, mathutils.Matrix] = {}
 
+        self._configure_model_data()
+        self._configure_position()
 
-# set_modifiers_visibility helper function
-def set_object_mod_vis(obj, show_modifier):
-    for mod in obj.modifiers:
-        mod.show_in_editmode = show_modifier
-        mod.show_render = show_modifier
-        mod.show_viewport = show_modifier
-    # obj.modifiers.remove(mod) # to delete modifier
+        # TODO: add cameras
+        # TODO: add background
 
+    def _configure_model_data(self):
+        """Assign configurational attributes' values based on loaded model contents."""
+        obj_type, rendered_obj_name = "", ""
+        if config.blendcfg["OBJECT"]["RENDERED_OBJECT"]:
+            obj_type = config.blendcfg["OBJECT"]["RENDERED_OBJECT"][0]
+            rendered_obj_name = config.blendcfg["OBJECT"]["RENDERED_OBJECT"][1]
 
-def set_all_modifiers_visibility(pcb_parent, show_modifiers):
-    logger.debug("Setting modifiers visibility to: " + str(show_modifiers))
-    set_object_mod_vis(pcb_parent, show_modifiers)
-    if "Components" not in bpy.data.collections:
-        return
-    for obj in bpy.data.collections.get("Components").objects:
-        if "Annotations" not in obj.name:
-            set_object_mod_vis(obj, show_modifiers)
+        # single custom object picked using RENDERED_OBJECT setting
+        if obj_type == "Object":
+            logger.info(f"Rendering from object: {rendered_obj_name}")
+            self._configure_as_singleobject(rendered_obj_name)
+            return
 
+        # single collection picked using RENDERED_OBJECT setting
+        # will work as Assembly collection before
+        if obj_type == "Collection":
+            logger.info(f"Rendering from collection: {rendered_obj_name}")
+            self._configure_as_collection(rendered_obj_name)
+            return
 
-# engine in ['WIREFRAME'/'BLENDER_WORKBENCH','BLENDER_EEVEE','CYCLES']
-def studio_renders(pcb_parent, add_info=""):
-    logger.info("** [RENDER] **")
-    # show modifiers only when photorealistic render
-    set_all_modifiers_visibility(pcb_parent, True)
+        # PCB generated using gerber2blend
+        # can be without components
+        if bpy.data.collections.get("Board") and bpy.data.objects.get(config.PCB_name):
+            logger.info("PCB type model was recognized.")
+            self._configure_as_PCB(config.PCB_name)
+            return
 
-    if config.blendcfg["OUTPUT"]["FREESTYLE"]:
-        renderer.set_freestyle()
-
-    direction = ["TOP", "BOTTOM", "REAR"]
-    # for each background
-    for bg in config.blendcfg["EFFECTS"]["BACKGROUND"]:
-        if bg == "Transparent":
-            backgroundCol = ""
+        # Unknown type model
+        # check if there's only one object
+        # if there's more, treat it as collection
+        if len(bpy.data.objects) == 1:
+            rendered_obj_name = bpy.data.objects[0].name
+            logger.info(f"Rendering from object: {rendered_obj_name}")
+            self._configure_as_singleobject(rendered_obj_name, adjust_pos=True)
         else:
-            backgroundCol = bpy.data.collections["Background_" + bg]
-            backgroundCol.hide_render = False
-            backgroundCol.hide_viewport = False
-        # check each direction
-        for dir in direction:
-            # if direction is to be rendered
-            if config.blendcfg["RENDERS"][dir]:
-                # check each camera type
-                for cam_type in config.cam_types:
-                    # if given camera is to be rendered
-                    if config.blendcfg["RENDERS"][cam_type]:
-                        logger.info(f"{add_info} {bg} {dir} {cam_type}")
-                        file_name = (
-                            config.renders_path
-                            + config.PCB_name
-                            + "_"
-                            + dir.lower()
-                            + "_"
-                            + cam_type.lower()
-                            + "_"
-                            + bg.lower()
-                        )
-                        cam_obj = bpy.data.objects.get("camera_" + cam_type.lower())
-                        if cam_obj is None:
-                            logger.warning(
-                                f"{cam_type} view enabled in config but no 'camera_{cam_type.lower()}' object found in file. Skipping render."
-                            )
-                        else:
-                            obj_set_rotation(pcb_parent, dir[0])
-                            studio_prepare(pcb_parent, backgroundCol, cam_obj)
-                            renderer.render(cam_obj, file_name)
-                            obj_set_rotation(pcb_parent, "T")
-            if backgroundCol != "":
-                reset_background_location(backgroundCol)
-        if backgroundCol != "":
-            backgroundCol.hide_render = True
-            backgroundCol.hide_viewport = True
+            logger.info("Unknown type model was recognized.")
+            self._configure_as_unknown()
 
+    def _configure_as_PCB(self, object_name):
+        self.rendered_obj = bpy.data.objects.get(object_name, "")
+        if not self.rendered_obj:
+            raise RuntimeError(
+                f"{object_name} object could not be found in Blender model data."
+            )
+        self.top_components, self.bottom_components = (
+            cu.get_top_bottom_component_lists()
+        )
+        self.is_unknown = False
+        self.is_pcb = True
+        components_col = bpy.data.collections.get("Components")
+        components = [object for object in components_col.objects]
+        bbox_obj = bb.generate_bbox(components + [self.rendered_obj])
+        cu.parent_list_to_object([bbox_obj], self.rendered_obj)
 
-# changes before saving - help when opening pcb.blend in GUI
-def default_world(pcb_parent):
-    logger.info("Setting world to default")
-    bpy.data.scenes["Scene"].display.shading.light = "STUDIO"
-    bpy.context.scene.render.engine = "CYCLES"
-    cam_ortho = bpy.data.objects["camera_ortho"]
-    studio_prepare(pcb_parent, "Black", cam_ortho)
-    set_space_shading("SOLID")
+    def _configure_as_collection(self, collection_name):
+        rendered_col = bpy.data.collections.get(collection_name, "")
+        if not rendered_col:
+            raise RuntimeError(
+                f"{collection_name} collection could not be found in Blender model data."
+            )
+        components = [object for object in rendered_col.objects]
+        self.rendered_obj = bb.generate_bbox(components)
+        self.top_components, self.bottom_components = cu.get_top_bottom_component_lists(
+            components, enable_all=True
+        )
+        self.is_unknown = False
+        self.is_collection = True
+        cu.link_obj_to_collection(self.rendered_obj, rendered_col)
+        cu.parent_list_to_object(components, self.rendered_obj)
 
+    def _configure_as_singleobject(self, object_name):
+        self.rendered_obj = bpy.data.objects.get(object_name, "")
+        if not self.rendered_obj:
+            raise RuntimeError(
+                f"{object_name} object could not be found in Blender model data."
+            )
+        self.is_unknown = False
+        self.is_object = True
+        self.display_rot = self.rendered_obj.get("DISPLAY_ROT", 0)
 
-# blender requirement, usefull for API additions
-def register():
-    pass
+    def _configure_as_unknown(self):
+        components = [object for object in bpy.data.objects]
+        self.rendered_obj = bb.generate_bbox(components)
+        self.top_components, self.bottom_components = cu.get_top_bottom_component_lists(
+            components, enable_all=True
+        )
+        cu.parent_list_to_object(components, self.rendered_obj)
 
+    def _configure_position(self):
+        """Adjust model position before render and assign values to positions dict"""
+        self.rendered_obj.rotation_mode = "XYZ"
+        if config.blendcfg["OBJECT"]["AUTO_ROTATE"]:
+            if self.is_pcb:
+                cu.rotate_horizontally(self.rendered_obj)
 
-def unregister():
-    pass
+            if self.is_object:
+                cu.apply_display_rot(self.rendered_obj, self.display_rot)
 
+        if self.is_object:
+            cu.center_on_scene(self.rendered_obj)
 
-if __name__ == "__main__":
-    register()
+        for key, rotation in self.presets.items():
+            self.rendered_obj.rotation_euler = rotation
+            cu.update_depsgraph()
+            self.save_position(key)
+
+        self.change_position("TOP")
+
+    def save_position(self, key: str):
+        """
+        Save position of the rendered_object to the dictionary under provided key.
+        """
+        self.positions[key] = self.rendered_obj.matrix_world.copy()
+        logger.debug(
+            f"Saved {self.rendered_obj.name} location: \n{self.positions[key]} as '{key}'"
+        )
+
+    def change_position(self, key: str):
+        """
+        Move rendered_object to position saved in dictionary.
+        """
+        self.rendered_obj.matrix_world = self.positions[key].copy()
+        logger.debug(f"Moved {self.rendered_obj.name} to '{key}' position")

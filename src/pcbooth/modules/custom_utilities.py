@@ -3,6 +3,7 @@ from mathutils import Vector, kdtree
 import logging
 import pcbooth.modules.config as config
 from math import radians
+from mathutils import Matrix
 from typing import List, Tuple
 
 logger = logging.getLogger(__name__)
@@ -63,8 +64,41 @@ def center_on_scene(object: bpy.types.Object) -> None:
     bpy.context.view_layer.objects.active = object
     bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY", center="BOUNDS")
     object.location[:] = [0, 0, 0]
-    bpy.ops.object.transform_apply()
+    apply_all_transform_obj(object)
     bpy.ops.object.select_all(action="DESELECT")
+
+
+def rotate_horizontally(object: bpy.types.Object) -> None:
+    """
+    Apply rotation based on PCB dimensions to rotate it horizontally.
+    Rotation is applied around center of a scene (0,0,0) point.
+    """
+    rotation_matrix = Matrix.Rotation(radians(-90), 4, "Z")
+    if object.dimensions.x < object.dimensions.y:
+        logger.info("Rotating the PCB horizontally.")
+        object.rotation_euler = [0, 0, radians(-90)]
+        apply_all_transform_obj(object)
+
+        # rotate camera_custom object if present
+        if custom_camera := bpy.data.objects.get("camera_custom"):
+            logger.info("Rotating 'camera_custom' accordingly")
+            custom_camera.matrix_world = rotation_matrix @ custom_camera.matrix_world
+
+
+def apply_display_rot(object: bpy.types.Object, display_rot: int) -> None:
+    """
+    Apply rotation based on DISPLAY_ROT property in component model.
+    DISPLAY_ROT property can be used to ensure the model appears in upright position on render (usually when looking at the marking).
+    """
+    logger.info(f"Rotating model using DISPLAY_ROT property ({display_rot}deg)")
+    rotation = radians(display_rot)
+    object.rotation_euler = [0, 0, rotation]
+    apply_all_transform_obj(object)
+
+
+def update_depsgraph():
+    """Update Blender dependency graph tree. Needed to refresh translation matrix of an object."""
+    bpy.context.view_layer.update()
 
 
 def get_root_object(object: bpy.types.Object) -> bpy.types.Object | None:
@@ -230,24 +264,6 @@ def link_obj_to_collection(
     for coll in obj.users_collection:  # type: ignore
         coll.objects.unlink(obj)
     target_coll.objects.link(obj)
-
-
-def apply_display_rot(obj):
-    """Apply rotation based on DISPLAY_ROT property in component model.
-    DISPLAY_ROT property can be used to ensure the model appears in upright position on render (usually when looking at the marking).
-    """
-    logger.debug(f"DISPLAY_ROT value: {obj.get('DISPLAY_ROT')}")
-    if display_rot := obj.get("DISPLAY_ROT"):
-        logger.info(f"Rotating model using DISPLAY_ROT! ({display_rot}deg)")
-        rotation = radians(int(display_rot))
-        obj.rotation_euler = [0, 0, rotation]
-        bpy.ops.object.transform_apply(
-            location=False,
-            rotation=True,
-            scale=False,
-            properties=False,
-            isolate_users=False,
-        )
 
 
 def check_keyframes_exist():
