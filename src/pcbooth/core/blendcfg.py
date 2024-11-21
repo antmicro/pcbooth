@@ -111,7 +111,7 @@ CONFIGURATION_SCHEMA = {
         "TOP": Field("bool"),
         "BOTTOM": Field("bool"),
         "REAR": Field("bool"),
-        "ROTATE_HORIZONTALLY": Field("bool"),
+        "AUTO_ROTATE": Field("bool"),
         "RENDERED_OBJECT": Field(
             "data_block", optional=True, conv=parse_data_block_strings
         ),

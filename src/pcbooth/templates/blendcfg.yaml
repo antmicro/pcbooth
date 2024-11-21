@@ -42,7 +42,7 @@ default: &default
     TOP: True
     BOTTOM: False
     REAR: False
-    ROTATE_HORIZONTALLY: True
+    AUTO_ROTATE: True
     RENDERED_OBJECT: 
 
   OUTPUT:

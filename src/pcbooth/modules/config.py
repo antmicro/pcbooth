@@ -22,7 +22,6 @@ pcb_blend_path: str = ""
 
 args: argparse.Namespace
 
-
 logger = logging.getLogger(__name__)
 
 

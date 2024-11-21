@@ -10,6 +10,7 @@ from math import radians
 import logging
 import pcbooth.modules.custom_utilities as cu
 import pcbooth.modules.bounding_box as bb
+from pcbooth.modules.camera import Camera
 from typing import List, Dict
 
 logger = logging.getLogger(__name__)
@@ -34,15 +35,42 @@ class Studio:
         self.display_rot: int = 0
         self.top_components: List[bpy.types.Object] = []
         self.bottom_components: List[bpy.types.Object] = []
-        self.cameras: List[bpy.types.Object] = []
-        self.backgrounds: List[bpy.types.Object] = []
         self.positions: Dict[str, mathutils.Matrix] = {}
 
         self._configure_model_data()
         self._configure_position()
 
-        # TODO: add cameras
+        self._add_cameras()
+
         # TODO: add background
+
+    def _add_cameras(self):
+        Camera.add_collection()
+
+        cameras = get_keys(config.blendcfg["CAMERAS"], skipped=["ORTHO_TYPE", "CUSTOM"])
+        positions = get_keys(
+            config.blendcfg["OBJECT"], skipped=["AUTO_ROTATE", "RENDERED_OBJECT"]
+        )
+
+        for camera_name in cameras:
+            Camera(camera_name, Camera.presets[camera_name])
+        if config.blendcfg["CAMERAS"]["CUSTOM"]:
+            if camera_custom := bpy.data.objects.get("camera_custom"):
+                Camera(camera=camera_custom)
+            else:
+                logger.warning(
+                    f"[CAMERAS][CUSTOM] enabled but no 'camera_custom' predefined object found in Blender file."
+                )
+
+        for camera in Camera.objects:
+            for position in positions:
+                self.change_position(position)
+                camera.align(self.rendered_obj)
+                camera.save_position(position)
+
+        logger.info(
+            f"Added {len(Camera.objects)} cameras to Studio: {[cam.object.name for cam in Camera.objects]}"
+        )
 
     def _configure_model_data(self):
         """Assign configurational attributes' values based on loaded model contents."""
@@ -133,37 +161,31 @@ class Studio:
         cu.parent_list_to_object(components, self.rendered_obj)
 
     def _configure_position(self):
-        """Adjust model position before render and assign values to positions dict"""
-        self.rendered_obj.rotation_mode = "XYZ"
+        """
+        Adjust model position before render and assign values to positions dict.
+        When selected object is a child, rotates and moves top parent.
+        """
+        object = cu.get_top_parent(self.rendered_obj)
+
         if config.blendcfg["OBJECT"]["AUTO_ROTATE"]:
             if self.is_pcb:
-                cu.rotate_horizontally(self.rendered_obj)
+                cu.rotate_horizontally(object)
 
             if self.is_object:
-                cu.apply_display_rot(self.rendered_obj, self.display_rot)
+                cu.apply_display_rot(object, self.display_rot)
 
         if self.is_object:
-            cu.center_on_scene(self.rendered_obj)
-
-        for key, rotation in self.presets.items():
-            self.rendered_obj.rotation_euler = rotation
-            cu.update_depsgraph()
-            self.save_position(key)
-
-        self.change_position("TOP")
-
-    def save_position(self, key: str):
-        """
-        Save position of the rendered_object to the dictionary under provided key.
-        """
-        self.positions[key] = self.rendered_obj.matrix_world.copy()
-        logger.debug(
-            f"Saved {self.rendered_obj.name} location: \n{self.positions[key]} as '{key}'"
-        )
+            cu.center_on_scene(object)
 
     def change_position(self, key: str):
         """
         Move rendered_object to position saved in dictionary.
         """
-        self.rendered_obj.matrix_world = self.positions[key].copy()
+        object = cu.get_top_parent(self.rendered_obj)
+        object.rotation_euler = self.presets[key]
         logger.debug(f"Moved {self.rendered_obj.name} to '{key}' position")
+
+
+def get_keys(cfg: Dict[str, bool], skipped: List[str]) -> List[str]:
+    """Retrieve keys from a dictionary that have a `True` value and are not in a specified list of skipped keys."""
+    return [key for key, value in cfg.items() if value and key not in skipped]

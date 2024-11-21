@@ -13,7 +13,7 @@ def save_pcb_blend(path: str, apply_transforms: bool = False) -> None:
     """Save the current model at the specified path."""
     if apply_transforms:
         for obj in bpy.context.scene.objects:
-            apply_all_transform_obj(obj)
+            apply_all_transforms(obj)
     bpy.ops.wm.save_as_mainfile(filepath=path)
 
 
@@ -64,7 +64,7 @@ def center_on_scene(object: bpy.types.Object) -> None:
     bpy.context.view_layer.objects.active = object
     bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY", center="BOUNDS")
     object.location[:] = [0, 0, 0]
-    apply_all_transform_obj(object)
+    apply_all_transforms(object)
     bpy.ops.object.select_all(action="DESELECT")
 
 
@@ -77,7 +77,7 @@ def rotate_horizontally(object: bpy.types.Object) -> None:
     if object.dimensions.x < object.dimensions.y:
         logger.info("Rotating the PCB horizontally.")
         object.rotation_euler = [0, 0, radians(-90)]
-        apply_all_transform_obj(object)
+        apply_all_transforms(object)
 
         # rotate camera_custom object if present
         if custom_camera := bpy.data.objects.get("camera_custom"):
@@ -93,12 +93,19 @@ def apply_display_rot(object: bpy.types.Object, display_rot: int) -> None:
     logger.info(f"Rotating model using DISPLAY_ROT property ({display_rot}deg)")
     rotation = radians(display_rot)
     object.rotation_euler = [0, 0, rotation]
-    apply_all_transform_obj(object)
+    apply_all_transforms(object)
 
 
 def update_depsgraph():
     """Update Blender dependency graph tree. Needed to refresh translation matrix of an object."""
     bpy.context.view_layer.update()
+
+
+def get_top_parent(object: bpy.types.Object) -> bpy.types.Object:
+    """Find top parent of the child object"""
+    while object.parent:
+        object = object.parent
+    return object
 
 
 def get_root_object(object: bpy.types.Object) -> bpy.types.Object | None:
@@ -133,13 +140,61 @@ def parent_list_to_object(
         bpy.ops.object.select_all(action="DESELECT")
 
 
-###
-
-
-def apply_all_transform_obj(obj):
-    obj.select_set(True)
+def apply_all_transforms(object: bpy.types.Object) -> None:
+    """Apply all translations to specified object"""
+    object.select_set(True)
     bpy.ops.object.transform_apply()
-    obj.select_set(False)
+    object.select_set(False)
+
+
+def select_all(parent_obj: bpy.types.Object) -> None:
+    """Select parent object and all children recursively"""
+    bpy.ops.object.mode_set(mode="OBJECT")
+    bpy.ops.object.select_all(action="DESELECT")
+
+    bpy.context.view_layer.objects.active = parent_obj
+    bpy.ops.object.select_grouped(extend=True, type="CHILDREN_RECURSIVE")
+    parent_obj.select_set(True)
+
+
+def default_world() -> None:
+    """Change Viewport before saving - help when opening model in GUI"""
+    logger.info("Setting world to default")
+    bpy.data.scenes["Scene"].display.shading.light = "STUDIO"
+    bpy.context.scene.render.engine = "CYCLES"
+    for area in bpy.context.screen.areas:
+        if area.type == "VIEW_3D":
+            for space in area.spaces:
+                if space.type == "VIEW_3D":
+                    space.shading.type = "SOLID"
+
+
+def get_collection(
+    name: str, parent: bpy.types.Collection = None
+) -> bpy.types.Collection:
+    """Get collection with provided name, create it if necessary"""
+
+    name = name[:63]
+    col = bpy.data.collections.get(name)
+    if col is None:
+        col = bpy.data.collections.new(name)
+        if parent:
+            parent.children.link(col)
+        else:
+            bpy.context.scene.collection.children.link(col)
+    return col
+
+
+def link_obj_to_collection(
+    obj: bpy.types.Object, target_coll: bpy.types.Collection
+) -> None:
+    """Loop through all collections the obj is linked to and unlink it from there, then link to targed collection."""
+    for coll in obj.users_collection:  # type: ignore
+        coll.objects.unlink(obj)
+    target_coll.objects.link(obj)
+
+
+###
 
 
 def get_parent_object(collection):
@@ -212,6 +267,7 @@ def get_bbox(obj, arg):
 # USED
 
 
+# deprecated, use select_all instead
 def select_PCB():
     # TODO: see if this can be written in same way as the non-PCB (with select_grouped)
     bpy.ops.object.select_all(action="DESELECT")
@@ -228,20 +284,6 @@ def select_PCB():
         bpy.context.view_layer.objects.active = config.rendered_obj
         bpy.ops.object.select_grouped(extend=True, type="CHILDREN_RECURSIVE")
         config.rendered_obj.select_set(True)
-
-
-def get_collection(name, parent=None):
-    """Get collection with provided name, create it if necessary"""
-
-    name = name[:63]
-    col = bpy.data.collections.get(name)
-    if col is None:
-        col = bpy.data.collections.new(name)
-        if parent:
-            parent.children.link(col)
-        else:
-            bpy.context.scene.collection.children.link(col)
-    return col
 
 
 def remove_collection(name):
