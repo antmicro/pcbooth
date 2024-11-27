@@ -1,8 +1,8 @@
-"""Bounding box calculation module"""
+"""Bounding box calculation module."""
 
+import bpy
 from typing import List, Tuple
 from mathutils import Vector
-import bpy
 import logging
 
 import pcbooth.modules.custom_utilities as cu

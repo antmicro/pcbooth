@@ -4,15 +4,17 @@ Adds cameras, lights and backgrounds.
 """
 
 import bpy
-import pcbooth.modules.config as config
-from mathutils import Vector, Matrix
 from math import radians
+from typing import List, Dict
 import logging
+
+import pcbooth.modules.config as config
 import pcbooth.modules.custom_utilities as cu
 import pcbooth.modules.bounding_box as bb
 from pcbooth.modules.camera import Camera
 from pcbooth.modules.background import Background
-from typing import List, Dict
+from pcbooth.modules.light import Light
+
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +44,7 @@ class Studio:
         self._configure_position()
 
         self._add_cameras()
+        self._add_lights()
         self._add_backgrounds()
 
     def _add_cameras(self):
@@ -71,6 +74,7 @@ class Studio:
         logger.info(
             f"Added {len(Camera.objects)} cameras to Studio: {[cam.object.name for cam in Camera.objects]}"
         )
+        self.change_position("TOP")
 
     def _add_backgrounds(self):
         Background.add_collection()
@@ -89,6 +93,17 @@ class Studio:
 
         logger.info(
             f"Added {len(Background.objects)} backgrounds to Studio: {[bg.object.name for bg in Background.objects]}"
+        )
+
+    def _add_lights(self):
+        Light.add_collection()
+        Light.bind_to_object(self.rendered_obj)
+
+        for light_name in Light.presets:
+            Light(light_name, *Light.presets[light_name])
+
+        logger.info(
+            f"Added {len(Light.objects)} lights to Studio: {[light.object.name for light in Light.objects]}"
         )
 
     def _configure_model_data(self):
@@ -202,6 +217,7 @@ class Studio:
         """
         object = cu.get_top_parent(self.rendered_obj)
         object.rotation_euler = self.presets[key]
+        cu.apply_all_transforms(object)
         logger.debug(f"Moved {self.rendered_obj.name} to '{key}' position")
 
 

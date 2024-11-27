@@ -1,15 +1,16 @@
+"""Module handling backgrounds configuration and positioning."""
+
 import bpy
 import logging
+from typing import List, ClassVar
 
-from bpy.types import Object
 import pcbooth.modules.config as config
-import pcbooth.modules.fileIO as fio
+import pcbooth.modules.file_io as fio
 from pcbooth.modules.custom_utilities import (
     link_obj_to_collection,
     get_collection,
     get_min_z,
 )
-from typing import List, ClassVar
 
 
 logger = logging.getLogger(__name__)

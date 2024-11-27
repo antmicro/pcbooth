@@ -1,3 +1,5 @@
+"""Module handling cameras configuration and positioning."""
+
 import bpy
 from pcbooth.modules.custom_utilities import (
     select_all,
@@ -45,7 +47,7 @@ class Camera:
                 f"Camera collection is not added, call add_collection class method before creating an instance."
             )
 
-        self.positions: Dict[str, mathutils.Matrix] = {}
+        self.positions: Dict[str, Matrix] = {}
         self.object: bpy.types.Object = self._add(name, rotation, camera)
         self._set_defaults()
 

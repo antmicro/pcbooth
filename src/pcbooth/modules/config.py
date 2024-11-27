@@ -1,14 +1,11 @@
 """Module for configuring input data."""
 
-import bpy
 import argparse
 import logging
 from os import getcwd, path
-from typing import Dict, Any, List
-import pcbooth.modules.fileIO as fio
+from typing import Dict, Any
+import pcbooth.modules.file_io as fio
 import pcbooth.core.blendcfg as bcfg
-import pcbooth.modules.custom_utilities as cu
-import pcbooth.modules.bounding_box as bb
 
 blendcfg: Dict[str, Any] = {}
 prj_path: str = ""

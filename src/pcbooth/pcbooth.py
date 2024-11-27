@@ -1,19 +1,14 @@
-import bpy
 import traceback
 import sys
 import argparse
+from os import path, getcwd
 import logging
+
 import pcbooth.modules.config as config
 import pcbooth.modules.custom_utilities as cu
-from pcbooth.modules.studio import Studio
-import pcbooth.modules.fileIO as fio
-from pcbooth.modules.animation import make_animations
-from pcbooth.modules.hardware_portal import make_transitions, make_stackup
-from pcbooth.modules.hotareas import hotarea_renders
-from pcbooth.modules.assembly import make_explodedview
 import pcbooth.core.blendcfg as blendcfg
 import pcbooth.core.log as log
-from os import path, getcwd
+from pcbooth.modules.studio import Studio
 
 
 logger = logging.getLogger(__name__)
