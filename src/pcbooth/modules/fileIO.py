@@ -6,6 +6,8 @@ from shutil import copyfile
 import bpy
 import hiyapyco
 from xdg.BaseDirectory import load_data_paths
+import pcbooth.modules.config as config
+from typing import Optional, List, Callable
 
 logger = logging.getLogger(__name__)
 
@@ -99,25 +101,44 @@ def import_from_blendfile(blendfile, data_type, filter_func=lambda x: True):
     return None
 
 
-def get_data_from_blendfile(blendfile, data_type, filter_func=lambda x: True):
+def get_data_from_blendfile(
+    blendfile: str, data_type: str, filter_func: Callable[[str], bool] = lambda x: True
+) -> Optional[List[str]]:
+    """List data from another Blender file without including it in current file."""
     result = None
     try:
         with bpy.data.libraries.load(blendfile) as (data_from, data_to):
             result = list(filter(filter_func, getattr(data_from, data_type)))
-            logger.debug("found data " + data_type + " in file " + blendfile)
-    except:
-        logger.error("failed to open blend file " + blendfile)
+            logger.debug("Found data " + data_type + " in file " + blendfile)
+    except Exception:
+        logger.error("Failed to open blend file " + blendfile)
     return result
 
 
-# blender requirement, usefull for API additions
-def register():
-    pass
+def link_collection_from_blendfile(
+    blendfile: str, collection_name: str
+) -> bpy.types.Object | None:
+    """
+    Link collection data from another Blender file.
+    """
+    section = "/Collection/"
+    filepath = blendfile + section + collection_name
+    directory = blendfile + section
+    bpy.ops.wm.link(
+        filepath=filepath,  # full path to .blend with /Collection/collection name
+        directory=directory,  # full path to .blend with /Collection
+        filename=collection_name,  # collection name
+        active_collection=False,
+    )
 
-
-def unregister():
-    pass
-
-
-if __name__ == "__main__":
-    register()
+    # return last object that starts with collection_name (in case it got appended with index)
+    object = [
+        obj
+        for obj in bpy.data.objects
+        if obj.name.startswith(collection_name) and not obj.library
+    ][-1]
+    if isinstance(object, bpy.types.Object):
+        logger.debug(f"Linked {collection_name} from {blendfile}")
+        return object
+    logger.debug(f"Failed to link {collection_name} from {blendfile}")
+    return None

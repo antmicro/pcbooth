@@ -89,7 +89,7 @@ CONFIGURATION_SCHEMA = {
     },
     "STUDIO_EFFECTS": {
         "SAVE_SCENE": Field("bool"),
-        "BACKGROUND": Field("string"),
+        "BACKGROUND": Field("list[str]"),
         "LIGHTS_COLOR": Field("color"),
         "LIGHTS_INTENSITY": Field("int"),
         "ENVTEXTURE_INTENSITY": Field("float"),

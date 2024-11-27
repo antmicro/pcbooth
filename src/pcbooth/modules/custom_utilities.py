@@ -55,6 +55,12 @@ def get_top_bottom_component_lists(
     return top_comps, bot_comps
 
 
+def get_min_z(object: bpy.types.Object) -> float:
+    """Get lowest Z coordinate of all bounding box vertices coordinates of an object"""
+    current_vertices = [Vector(v[:]) @ object.matrix_world for v in object.bound_box]
+    return min([v.z for v in current_vertices])
+
+
 def center_on_scene(object: bpy.types.Object) -> None:
     """
     Move object's origin point to its geometric center and move the object to point (0,0,0) on scene.

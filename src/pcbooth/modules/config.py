@@ -16,6 +16,7 @@ pcbt_dir_path: str = ""
 
 fab_path: str = ""
 env_texture_path: str = ""
+backgrounds_path: str = ""
 renders_path: str = ""
 PCB_name: str = ""
 pcb_blend_path: str = ""
@@ -63,12 +64,14 @@ def configure_paths(arguments: argparse.Namespace) -> None:
 
     global fab_path
     global env_texture_path
+    global backgrounds_path
     global renders_path
     global animations_path
     global pcb_blend_path
     global PCB_name
 
     env_texture_path = pcbt_dir_path + "/templates/studio_small_03_4k.exr"
+    backgrounds_path = pcbt_dir_path + "/templates/backgrounds/"
     renders_path = prj_path + blendcfg["SETTINGS"]["RENDER_DIR"] + "/"
     animations_path = prj_path + blendcfg["SETTINGS"]["ANIMATION_DIR"] + "/"
     # hotareas_path = project_path + "assets/hotareas/"

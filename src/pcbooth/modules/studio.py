@@ -11,6 +11,7 @@ import logging
 import pcbooth.modules.custom_utilities as cu
 import pcbooth.modules.bounding_box as bb
 from pcbooth.modules.camera import Camera
+from pcbooth.modules.background import Background
 from typing import List, Dict
 
 logger = logging.getLogger(__name__)
@@ -41,8 +42,7 @@ class Studio:
         self._configure_position()
 
         self._add_cameras()
-
-        # TODO: add background
+        self._add_backgrounds()
 
     def _add_cameras(self):
         Camera.add_collection()
@@ -70,6 +70,25 @@ class Studio:
 
         logger.info(
             f"Added {len(Camera.objects)} cameras to Studio: {[cam.object.name for cam in Camera.objects]}"
+        )
+
+    def _add_backgrounds(self):
+        Background.add_collection()
+
+        for bg_name in config.blendcfg["STUDIO_EFFECTS"]["BACKGROUND"]:
+            Background(bg_name)
+
+        # TODO: for now PCB and other types of models have inconsistent ways of determining
+        # which object is the boundary one
+        # requires fix in how camera selects objects to frame itself
+        if self.is_pcb:
+            object = bpy.data.objects.get("BBOX")
+        else:
+            object = cu.get_top_parent(self.rendered_obj)
+        Background.update_position(object)
+
+        logger.info(
+            f"Added {len(Background.objects)} backgrounds to Studio: {[bg.object.name for bg in Background.objects]}"
         )
 
     def _configure_model_data(self):
