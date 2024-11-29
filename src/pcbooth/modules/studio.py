@@ -6,14 +6,15 @@ Adds cameras, lights and backgrounds.
 import bpy
 from math import radians
 from typing import List, Dict
+from mathutils import Matrix
 import logging
 
 import pcbooth.modules.config as config
 import pcbooth.modules.custom_utilities as cu
-import pcbooth.modules.bounding_box as bb
 from pcbooth.modules.camera import Camera
 from pcbooth.modules.background import Background
-from pcbooth.modules.light import Light
+from pcbooth.modules.light import Light, disable_emission_nodes
+from pcbooth.modules.renderer import init_renderer
 
 
 logger = logging.getLogger(__name__)
@@ -28,17 +29,18 @@ class Studio:
 
     def __init__(self, pcb_blend_path: str):
         cu.open_blendfile(pcb_blend_path)
+        init_renderer()
         self.collection = cu.get_collection("Studio")
 
         self.is_pcb: bool = False
         self.is_collection: bool = False
         self.is_object: bool = False
-        self.is_unknown: bool = True
-        self.rendered_obj: bpy.types.Object = None
+        self.rendered_obj: bpy.types.Object = None  # object to align camera to
+        self.top_parent: bpy.types.Object = None  # object to apply rotation
         self.display_rot: int = 0
         self.top_components: List[bpy.types.Object] = []
         self.bottom_components: List[bpy.types.Object] = []
-        self.positions: Dict[str, mathutils.Matrix] = {}
+        self.positions: Dict[str, Matrix] = {}
 
         self._configure_model_data()
         self._configure_position()
@@ -46,6 +48,7 @@ class Studio:
         self._add_cameras()
         self._add_lights()
         self._add_backgrounds()
+        self._apply_effects()
 
     def _add_cameras(self):
         Camera.add_collection()
@@ -82,22 +85,14 @@ class Studio:
         for bg_name in config.blendcfg["STUDIO_EFFECTS"]["BACKGROUND"]:
             Background(bg_name)
 
-        # TODO: for now PCB and other types of models have inconsistent ways of determining
-        # which object is the boundary one
-        # requires fix in how camera selects objects to frame itself
-        if self.is_pcb:
-            object = bpy.data.objects.get("BBOX")
-        else:
-            object = cu.get_top_parent(self.rendered_obj)
-        Background.update_position(object)
-
+        Background.update_position(self.top_parent)
         logger.info(
             f"Added {len(Background.objects)} backgrounds to Studio: {[bg.object.name for bg in Background.objects]}"
         )
 
     def _add_lights(self):
         Light.add_collection()
-        Light.bind_to_object(self.rendered_obj)
+        Light.bind_to_object(self.top_parent)
 
         for light_name in Light.presets:
             Light(light_name, *Light.presets[light_name])
@@ -106,93 +101,91 @@ class Studio:
             f"Added {len(Light.objects)} lights to Studio: {[light.object.name for light in Light.objects]}"
         )
 
+    def _apply_effects(self):
+        """Enable or disable additional studio effects"""
+        if not config.blendcfg["STUDIO_EFFECTS"]["LED_ON"]:
+            disable_emission_nodes()
+
     def _configure_model_data(self):
         """Assign configurational attributes' values based on loaded model contents."""
+        logger.info("Configuring studio...")
+
         obj_type, rendered_obj_name = "", ""
         if config.blendcfg["OBJECT"]["RENDERED_OBJECT"]:
             obj_type = config.blendcfg["OBJECT"]["RENDERED_OBJECT"][0]
             rendered_obj_name = config.blendcfg["OBJECT"]["RENDERED_OBJECT"][1]
 
-        # single custom object picked using RENDERED_OBJECT setting
+        # single object picked using RENDERED_OBJECT setting
         if obj_type == "Object":
             logger.info(f"Rendering from object: {rendered_obj_name}")
             self._configure_as_singleobject(rendered_obj_name)
             return
 
         # single collection picked using RENDERED_OBJECT setting
-        # will work as Assembly collection before
         if obj_type == "Collection":
             logger.info(f"Rendering from collection: {rendered_obj_name}")
             self._configure_as_collection(rendered_obj_name)
             return
 
         # PCB generated using gerber2blend
-        # can be without components
         if bpy.data.collections.get("Board") and bpy.data.objects.get(config.PCB_name):
             logger.info("PCB type model was recognized.")
             self._configure_as_PCB(config.PCB_name)
             return
 
         # Unknown type model
-        # check if there's only one object
-        # if there's more, treat it as collection
+        # if there's only one object it gets treated as single object
         if len(bpy.data.objects) == 1:
             rendered_obj_name = bpy.data.objects[0].name
             logger.info(f"Rendering from object: {rendered_obj_name}")
-            self._configure_as_singleobject(rendered_obj_name, adjust_pos=True)
+            self._configure_as_singleobject(rendered_obj_name)
         else:
             logger.info("Unknown type model was recognized.")
             self._configure_as_unknown()
 
     def _configure_as_PCB(self, object_name):
-        self.rendered_obj = bpy.data.objects.get(object_name, "")
-        if not self.rendered_obj:
+        self.is_pcb = True
+        self.top_parent = bpy.data.objects.get(object_name, "")
+        if not self.top_parent:
             raise RuntimeError(
                 f"{object_name} object could not be found in Blender model data."
             )
-        self.top_components, self.bottom_components = (
-            cu.get_top_bottom_component_lists()
-        )
-        self.is_unknown = False
-        self.is_pcb = True
-        components_col = bpy.data.collections.get("Components")
-        components = [object for object in components_col.objects]
-        bbox_obj = bb.generate_bbox(components + [self.rendered_obj])
-        cu.parent_list_to_object([bbox_obj], self.rendered_obj)
+        self.rendered_obj = self.top_parent
+        self.components = cu.select_all(self.top_parent)
+        self._get_top_bottom_components()
 
     def _configure_as_collection(self, collection_name):
+        self.is_collection = True
         rendered_col = bpy.data.collections.get(collection_name, "")
         if not rendered_col:
             raise RuntimeError(
                 f"{collection_name} collection could not be found in Blender model data."
             )
-        components = [object for object in rendered_col.objects]
-        self.rendered_obj = bb.generate_bbox(components)
-        self.top_components, self.bottom_components = cu.get_top_bottom_component_lists(
-            components, enable_all=True
-        )
-        self.is_unknown = False
-        self.is_collection = True
-        cu.link_obj_to_collection(self.rendered_obj, rendered_col)
-        cu.parent_list_to_object(components, self.rendered_obj)
+        scene_components = [object for object in bpy.data.objects]
+        rendered_components = [object for object in rendered_col.objects]
+        self._get_top_bottom_components(rendered_components)
+        self.top_parent = cu.add_empty("_parent")
+        self.rendered_obj = cu.add_empty("_rendered_parent")
+        cu.parent_list_to_object(rendered_components, self.rendered_obj)
+        cu.parent_list_to_object(scene_components, self.top_parent)
 
     def _configure_as_singleobject(self, object_name):
+        self.is_object = True
         self.rendered_obj = bpy.data.objects.get(object_name, "")
         if not self.rendered_obj:
             raise RuntimeError(
                 f"{object_name} object could not be found in Blender model data."
             )
-        self.is_unknown = False
-        self.is_object = True
-        self.display_rot = self.rendered_obj.get("DISPLAY_ROT", 0)
+        self._get_top_bottom_components([self.rendered_obj])
+        self.top_parent = cu.get_top_parent(self.rendered_obj)
+        cu.set_origin(self.rendered_obj)  # needed to correctly calculate focus
 
     def _configure_as_unknown(self):
+        self.top_parent = cu.add_empty("_parent")
+        self.rendered_obj = self.top_parent
         components = [object for object in bpy.data.objects]
-        self.rendered_obj = bb.generate_bbox(components)
-        self.top_components, self.bottom_components = cu.get_top_bottom_component_lists(
-            components, enable_all=True
-        )
-        cu.parent_list_to_object(components, self.rendered_obj)
+        self._get_top_bottom_components(components)
+        cu.parent_list_to_object(components, self.top_parent)
 
     def _configure_position(self):
         """
@@ -205,11 +198,39 @@ class Studio:
             if self.is_pcb:
                 cu.rotate_horizontally(object)
 
-            if self.is_object:
+            if self.is_object and len(self.top_components) == 1:
+                self.display_rot = self.rendered_obj.get("DISPLAY_ROT", 0)
                 cu.apply_display_rot(object, self.display_rot)
 
-        if self.is_object:
+        if self.is_object and len(self.top_components) == 1:
             cu.center_on_scene(object)
+
+    def _get_top_bottom_components(self, objects: List[bpy.types.Object] = []) -> None:
+        """
+        Load top and bottom component lists using char stored in 'PCB_Side' custom property (PCB model type only).
+        This custom property is saved in objects when they're imported using picknblend tool.
+        If `enable_all` argument is set to true, all available components passed to function will be added to both of the lists.
+        """
+        top_comps = []
+        bot_comps = []
+        if self.is_pcb:
+            components = bpy.data.collections.get("Components")
+            if not components:
+                return
+            for comp in components.objects:
+                if "PCB_Side" not in comp.keys():
+                    continue
+                if comp["PCB_Side"] == "T":
+                    top_comps.append(comp)
+                elif comp["PCB_Side"] == "B":
+                    bot_comps.append(comp)
+        else:
+            top_comps = [obj for obj in objects if not obj.name.startswith("_")]
+            bot_comps = top_comps.copy()
+        logger.debug(f"Read top components: {top_comps}")
+        logger.debug(f"Read bot components: {bot_comps}")
+        self.top_components = top_comps
+        self.bottom_components = bot_comps
 
     def change_position(self, key: str):
         """

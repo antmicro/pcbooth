@@ -1,11 +1,8 @@
 """Module handling cameras configuration and positioning."""
 
 import bpy
-from pcbooth.modules.custom_utilities import (
-    select_all,
-    link_obj_to_collection,
-    get_collection,
-)
+import pcbooth.modules.custom_utilities as cu
+from pcbooth.modules.bounding_box import Bounds
 import pcbooth.modules.config as config
 from math import radians
 from mathutils import Matrix
@@ -32,8 +29,8 @@ class Camera:
     @classmethod
     def add_collection(cls):
         """Create new Cameras collection"""
-        studio = get_collection("Studio")
-        collection = get_collection("Cameras", studio)
+        studio = cu.get_collection("Studio")
+        collection = cu.get_collection("Cameras", studio)
         cls.collection = collection
 
     def __init__(
@@ -66,7 +63,7 @@ class Camera:
             camera = bpy.data.cameras.new(camera_name)
             object = bpy.data.objects.new(camera_name, camera)
             object.rotation_euler = rotation
-        link_obj_to_collection(object, Camera.collection)
+        cu.link_obj_to_collection(object, Camera.collection)
 
         logger.debug(f"Added camera object: {object.name} at {object.rotation_euler}")
         Camera.objects.append(self)
@@ -101,7 +98,7 @@ class Camera:
 
     def frame_selected(
         self,
-        rendered_obj: bpy.types.Object,
+        object: bpy.types.Object,
         zoom: float = 1.05,
     ):
         """
@@ -109,7 +106,7 @@ class Camera:
         Applies zoom afterwards (zoom < 1 - zoom in, zoom > 1 - zoom out).
         TBD: add zoom to blendcfg?
         """
-        select_all(rendered_obj)
+        cu.select_all(object)
         bpy.context.scene.camera = self.object
         bpy.ops.view3d.camera_to_view_selected()
         bpy.ops.object.select_all(action="DESELECT")
@@ -119,7 +116,7 @@ class Camera:
 
     def set_focus(
         self,
-        rendered_obj: bpy.types.Object,
+        object: bpy.types.Object,
         focal_ratio: float = 0.0625,
     ):
         """
@@ -127,15 +124,15 @@ class Camera:
         Apply focal ratio.
         TBD: add focal_ratio to blendcfg?
         """
-
-        self.object.data.dof.focus_distance = abs(
-            (rendered_obj.location - self.object.location).length
-        )
-        self.object.data.dof.aperture_fstop = focal_ratio
-
+        with Bounds(cu.select_all(object)) as target:
+            cu.set_origin(target.bounds)
+            self.object.data.dof.focus_distance = abs(
+                (target.bounds.location - self.object.location).length
+            )
+            self.object.data.dof.aperture_fstop = focal_ratio
         logger.debug(f"set_focus function used for {self.object.name}")
 
-    def align(self, rendered_obj: bpy.types.Object, **kwargs):
+    def align(self, object: bpy.types.Object, **kwargs):
         """
         Align camera to all rendered objects and then recalculate focus distance.
         Args:
@@ -150,5 +147,5 @@ class Camera:
             key: kwargs[key] for key in ["rendered_obj", "zoom"] if key in kwargs
         }
 
-        self.frame_selected(rendered_obj, **frame_selected_args)
-        self.set_focus(rendered_obj, **set_focus_args)
+        self.frame_selected(object, **frame_selected_args)
+        self.set_focus(object, **set_focus_args)

@@ -6,11 +6,8 @@ from typing import List, ClassVar
 
 import pcbooth.modules.config as config
 import pcbooth.modules.file_io as fio
-from pcbooth.modules.custom_utilities import (
-    link_obj_to_collection,
-    get_collection,
-    get_min_z,
-)
+import pcbooth.modules.custom_utilities as cu
+from pcbooth.modules.bounding_box import Bounds
 
 
 logger = logging.getLogger(__name__)
@@ -23,17 +20,18 @@ class Background:
     @classmethod
     def add_collection(cls):
         """Create new Backgrounds collection"""
-        studio = get_collection("Studio")
-        collection = get_collection("Backgrounds", studio)
+        studio = cu.get_collection("Studio")
+        collection = cu.get_collection("Backgrounds", studio)
         cls.collection = collection
 
     @classmethod
     def update_position(cls, object: bpy.types.Object):
         """Update position of all imported backgrounds in relation to current lowest point of rendered object"""
-        min_z = get_min_z(object)
-        for bg in cls.objects:
-            bg.object.location.z = min_z
-        logger.debug(f"Backgrounds moved to Z: {min_z}")
+        with Bounds(cu.select_all(object)) as target:
+            for bg in cls.objects:
+                bg.object.location.z = target.min_z
+        logger.debug(f"Backgrounds moved to Z: {bg.object.location.z}")
+        cu.update_depsgraph()
 
     @classmethod
     def use(cls, name: str = ""):
@@ -63,14 +61,13 @@ class Background:
         blendfile = config.backgrounds_path + name + ".blend"
         object = None
         if name == "transparent":
-            object = bpy.data.objects.new("transparent", None)
-            link_obj_to_collection(object, Background.collection)
+            object = cu.add_empty("transparent", Background.collection)
             logger.debug(f"Added background placeholder object: {object.name}")
 
         elif bg_data := fio.get_data_from_blendfile(blendfile, "collections"):
             bg_collection = bg_data[0]
             object = fio.link_collection_from_blendfile(blendfile, bg_collection)
-            link_obj_to_collection(object, Background.collection)
+            cu.link_obj_to_collection(object, Background.collection)
             logger.debug(
                 f"Added background linked object: {object.name} from {blendfile}"
             )

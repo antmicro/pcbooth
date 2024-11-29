@@ -9,6 +9,8 @@ import pcbooth.modules.custom_utilities as cu
 import pcbooth.core.blendcfg as blendcfg
 import pcbooth.core.log as log
 from pcbooth.modules.studio import Studio
+from pcbooth.modules.camera import Camera
+from pcbooth.modules.renderer import render
 
 
 logger = logging.getLogger(__name__)
@@ -68,7 +70,13 @@ def main():
             return 0
 
         config.init_global(args)
-        model = Studio(config.pcb_blend_path)
+        studio = Studio(config.pcb_blend_path)
+        for camera in Camera.objects:
+            for position in camera.positions:
+                print(position)
+                studio.change_position(str(position))
+                render(camera.object, f"test_{camera.object.name}_{position}")
+
         cu.save_pcb_blend("test.blend")
 
     except Exception:

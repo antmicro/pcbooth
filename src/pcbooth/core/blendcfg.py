@@ -3,9 +3,10 @@
 import logging
 import os.path
 from shutil import copyfile
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, List
 import hiyapyco  # type: ignore
 import re
+from bpy import types
 
 logger = logging.getLogger(__name__)
 
@@ -56,15 +57,12 @@ def parse_strings(arg: str) -> list[str]:
     return arg.replace(",", "").split()
 
 
-def hex_to_rgba(hex_number: str, alpha: bool = True) -> tuple[float, ...]:
-    """Convert hex number to RGBA."""
-    rgb = []
-    for i in (0, 2, 4):
-        decimal = int(hex_number[i : i + 2], 16)
-        rgb.append(decimal / 255)
-    if alpha:
-        rgb.append(1)
-    return tuple(rgb)
+def get_image_formats() -> List[str]:
+    """Get list of valid Blender image format extensions."""
+    formats_dict = types.ImageFormatSettings.bl_rna.properties["file_format"].enum_items
+    return [
+        item.identifier for item in formats_dict if "Output image" in item.description
+    ]
 
 
 # Schema for blendcfg.yaml file
@@ -80,8 +78,8 @@ CONFIGURATION_SCHEMA = {
         "THUMBNAIL_HEIGHT": Field("int"),
         "KEEP_PNGS": Field("bool"),
         "THUMBNAILS": Field("bool"),
-        "IMAGE_FORMAT": Field("string"),
-        "VIDEO_FORMAT": Field("string"),
+        "IMAGE_FORMAT": Field("image_format"),
+        "VIDEO_FORMAT": Field("video_format"),
         "RENDER_DIR": Field("string"),
         "ANIMATION_DIR": Field("string"),
         "FAB_DIR": Field("string"),
@@ -163,6 +161,24 @@ def is_data_block(arg: str | list[str] | None) -> bool:
     return len(arg) == 2
 
 
+def is_image_format(arg: str | None) -> bool:
+    """Check if given string is valid Blender image output format."""
+    if arg is None:
+        return False
+    if arg in get_image_formats():
+        return True
+    return False
+
+
+def is_video_format(arg: str | None) -> bool:
+    """Check if given string is a supported video output format."""
+    if arg is None:
+        return False
+    if arg in ["AVI", "MP4", "MPEG", "WEBM", "GIF"]:
+        return True
+    return False
+
+
 def check_throw_error(cfg: Dict[str, Any], args: list[str], schema: Field) -> None:
     """Validate the given configuration entry.
 
@@ -220,6 +236,8 @@ def check_throw_error(cfg: Dict[str, Any], args: list[str], schema: Field) -> No
     data_block_type_err = (
         f"{val} is not a valid <type>/<name> string defining Blender data-block"
     )
+    image_file_format_err = f"{val} is not a valid Blender image output format, must be one of {get_image_formats()}"
+    video_file_format_err = f"{val} is not a supported video output format, must be one of {['AVI', 'MP4', 'MPEG', 'WEBM', 'GIF']}"
 
     match schema.type:
         case "color":
@@ -241,6 +259,10 @@ def check_throw_error(cfg: Dict[str, Any], args: list[str], schema: Field) -> No
         case "list[str]":
             assert isinstance(val, list), not_schema_type_err
             assert all(isinstance(x, str) for x in val), not_schema_type_err
+        case "image_format":
+            assert is_image_format(val), image_file_format_err
+        case "video_format":
+            assert is_video_format(val), video_file_format_err
         case _:
             raise RuntimeError(f"[{args[0]}][{args[1]}] is not a {schema.type}")
 

@@ -4,37 +4,93 @@ import bpy
 from typing import List, Tuple
 from mathutils import Vector
 import logging
-
 import pcbooth.modules.custom_utilities as cu
 
 logger = logging.getLogger(__name__)
 
+BOUNDS_NAME = "_bounds"
 
-def generate_bbox(objects: List[bpy.types.Object]) -> bpy.types.Object:
+
+class Bounds:
     """
-    Generate bounding box EMPTY object using both locally added and linked objects.
+    Context manager class.
+    Generate single bounds object consisting of bounding boxes of objects passed as a list.
+    This object can be then used to determine entire list's total dimensions. Bounds object
+    gets removed on context mangers' exit.
+    Attributes:
+        objects :
+            list of objects used to create an instance of Bounds class
+        bounds :
+            Blender bounds object made out of bounding box vertices of objects from objects list
+        min_z :
+            lowest vertex Z value
+        max_z :
+            highest vertex Z value
     """
-    logger.info("Generating bounding box for loaded model.")
+
+    def __init__(self, objects: List[bpy.types.Object]) -> List[Vector]:
+        """
+        Initialize bounds context manager.
+        """
+        self.objects = objects
+        self.bounds = None
+        self.min_z = 0
+        self.max_z = 0
+
+    def __enter__(self):
+        """
+        Create bounds empty object.
+        """
+        self.bounds = generate_bounds(self.objects)
+        self.min_z = self._get_min_z()
+        self.max_z = self._get_max_z()
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        """
+        Remove bounds data from scene.
+        """
+        self.clear()
+
+    def _get_min_z(self) -> float:
+        """Get lowest Z coordinate of all bounding box vertices coordinates of an object"""
+        current_vertices = [
+            Vector(v[:]) @ self.bounds.matrix_world for v in self.bounds.bound_box
+        ]
+        return min([v.z for v in current_vertices])
+
+    def _get_max_z(self) -> float:
+        """Get highest Z coordinate of all bounding box vertices coordinates of an object"""
+        current_vertices = [
+            Vector(v[:]) @ self.bounds.matrix_world for v in self.bounds.bound_box
+        ]
+        return max([v.z for v in current_vertices])
+
+    def clear(self):
+        """Clear bounds object data."""
+        bpy.data.meshes.remove(self.bounds.data)
+
+
+def get_vertices(objects: List[bpy.types.Object]) -> List[Vector]:
+    """Get list of all vertices of objects passed as a list."""
     vertices = []
     objects_list = [obj.name for obj in objects]
 
     for obj in bpy.data.objects:
-        # skip all LIGHT and CAMERA objects
-        # TODO: this appears in multiple places, maybe lights and cameras should be
-        # skipped at the beginning, when objects list is created?
+        # skip all LIGHT, CAMERA and BACKGROUND objects
         if obj.type == "LIGHT":
-            logger.debug(f"{obj.name} skipped (type='LIGHT')")
             continue
         if obj.type == "CAMERA":
-            logger.debug(f"{obj.name} skipped (type='CAMERA')")
             continue
+        if obj.library:
+            if "templates/backgrounds" in obj.library.filepath:
+                continue
         # if object comes from linked library, use the original library as source of geometry,
         # apply transforms from the source object then from the linked library
         # there's no need to have the collection named the same as the file
         # there's no need to apply transforms in the source file
         if obj.library:
             if lib_obj := cu.get_root_object(obj):
-                logger.debug(f"{obj.name} is linked object from {obj.library.name} lib")
                 bbox_obj = [
                     obj.matrix_world @ Vector(corner) for corner in obj.bound_box
                 ]
@@ -43,25 +99,42 @@ def generate_bbox(objects: List[bpy.types.Object]) -> bpy.types.Object:
             else:
                 continue
         elif obj.name in objects_list and obj.instance_type == "NONE":
-            logger.debug(f"{obj.name} is a local object")
             bbox = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]
             vertices.extend(bbox)
-
     if not vertices:
-        raise RuntimeError(f"No bounding box vertices found")
+        raise RuntimeError(f"No rendered object vertices found")
+    return vertices
 
+
+def generate_bbox(objects: List[bpy.types.Object]) -> bpy.types.Object:
+    """
+    Generate bounding box EMPTY object using both locally added and linked objects.
+    """
+    vertices = get_vertices(objects)
     bbox_verts = calculate_bbox(vertices)
     obj = generate_mesh(bbox_verts)
+
     logger.debug(f"Generated bounding box object {obj} ({bbox_verts})")
+    return obj
+
+
+def generate_bounds(objects: List[bpy.types.Object]) -> bpy.types.Object:
+    """
+    Generate EMPTY object out of cloud of vertices using both locally added and linked objects.
+    """
+    vertices = get_vertices(objects)
+    obj = generate_mesh(vertices)
+
+    logger.debug(f"Generated bounds object {obj}")
     return obj
 
 
 def generate_mesh(vertices: List[Vector]) -> bpy.types.Object:
     """Generate mesh from vertices, edges and faces lists"""
-    mesh = bpy.data.meshes.new("BBOX")
+    mesh = bpy.data.meshes.new(BOUNDS_NAME)
     mesh.from_pydata(vertices, [], [])
     mesh.update()
-    obj = bpy.data.objects.new("BBOX", mesh)
+    obj = bpy.data.objects.new(BOUNDS_NAME, mesh)
     bpy.context.scene.collection.objects.link(obj)
     return obj
 

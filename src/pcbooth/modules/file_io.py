@@ -2,9 +2,12 @@
 
 import bpy
 import logging
-from os import listdir
+import os
+import sys
 from pathlib import Path
-from typing import Optional, List, Callable
+from contextlib import contextmanager
+from subprocess import run, DEVNULL, PIPE
+from typing import Optional, List, Callable, Literal
 
 import pcbooth.modules.config as config
 
@@ -19,7 +22,7 @@ def read_pcb_name_from_prj(path: str, extension: str) -> str:
     This function will fail and throw a `RuntimeError` if `path` is
     not a valid project directory.
     """
-    files = listdir(path)
+    files = os.listdir(path)
     project_file = [f for f in files if f.endswith(extension)]
 
     if len(project_file) != 1:
@@ -93,3 +96,61 @@ def link_collection_from_blendfile(
         return object
     logger.debug(f"Failed to link {collection_name} from {blendfile}")
     return None
+
+
+@contextmanager
+def stdout_redirected(to=os.devnull):
+    """
+    Redirect the standard output to dev/null.
+
+    This context manager temporarily redirects `sys.stdout` to a specified target file or stream.
+    During the redirection, any output written to `print()` or `sys.stdout` will be written to the target
+    instead of the original `stdout`. After exiting the context, `sys.stdout` is restored to its original state.
+
+    https://blender.stackexchange.com/questions/6119/suppress-output-of-python-operators-bpy-ops
+    """
+
+    fd = sys.stdout.fileno()
+
+    def _redirect_stdout(to):
+        sys.stdout.close()  # + implicit flush()
+        os.dup2(to.fileno(), fd)  # fd writes to 'to' file
+        sys.stdout = os.fdopen(fd, "w")  # Python writes to fd
+
+    with os.fdopen(os.dup(fd), "w") as old_stdout:
+        with open(to, "w") as file:
+            _redirect_stdout(to=file)
+        try:
+            yield  # allow code to be run with the redirected stdout
+        finally:
+            _redirect_stdout(to=old_stdout)  # restore stdout
+
+
+def remove_file(filepath: str) -> None:
+    """Remove file from the specified path."""
+    try:
+        os.remove(filepath)
+    except FileNotFoundError:
+        pass
+
+
+def execute_cmd(
+    cmd_list: List[str],
+    stdout: bool = False,
+    stderr: bool = False,
+    level: Literal["info", "debug", "warning", "error" "critical"] = "debug",
+) -> None:
+    """Execute command using Subprocess module. stderr and stdout can be passed to logger with varying level."""
+
+    stdout_val = PIPE if stdout else DEVNULL
+    stderr_val = PIPE if stderr else DEVNULL
+    log = run(
+        cmd_list,
+        check=True,
+        text=True,
+        stdout=stdout_val,
+        stderr=stderr_val,
+    )
+    logger = getattr(logging, level)
+    logger(log.stdout)
+    logger(log.stderr)

@@ -10,8 +10,8 @@ default: &default
     THUMBNAIL_HEIGHT: 320
     KEEP_PNGS: False
     THUMBNAILS: True                # enables thumbnails for eligible outputs
-    IMAGE_FORMAT: png
-    VIDEO_FORMAT: webm
+    IMAGE_FORMAT: PNG
+    VIDEO_FORMAT: WEBM
     RENDER_DIR: blender_renders     # default directory name for storing renders
     ANIMATION_DIR: assets/previews     # default directory name for storing renders
     FAB_DIR: fab                    # default directory name containing fabrication files

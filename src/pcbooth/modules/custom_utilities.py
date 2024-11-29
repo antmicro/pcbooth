@@ -1,10 +1,10 @@
 """Module containing custom utilities functions."""
 
 import bpy
-from mathutils import Vector, Matrix
+from mathutils import Matrix
 from math import radians
 import logging
-from typing import List, Tuple
+from typing import List
 
 logger = logging.getLogger(__name__)
 
@@ -24,18 +24,6 @@ def open_blendfile(blendfile: str) -> None:
     """
     logger.info(f"Opening existing file: {blendfile}")
     bpy.ops.wm.open_mainfile(filepath=blendfile)
-
-
-def get_min_z(object: bpy.types.Object) -> float:
-    """Get lowest Z coordinate of all bounding box vertices coordinates of an object"""
-    current_vertices = [Vector(v[:]) @ object.matrix_world for v in object.bound_box]
-    return min([v.z for v in current_vertices])
-
-
-def get_max_z(object: bpy.types.Object) -> float:
-    """Get highest Z coordinate of all bounding box vertices coordinates of an object"""
-    current_vertices = [Vector(v[:]) @ object.matrix_world for v in object.bound_box]
-    return max([v.z for v in current_vertices])
 
 
 def apply_all_transforms(object: bpy.types.Object) -> None:
@@ -93,41 +81,11 @@ def update_depsgraph():
 
 def select_all(parent_obj: bpy.types.Object) -> None:
     """Select parent object and all children recursively"""
-    bpy.ops.object.mode_set(mode="OBJECT")
-    bpy.ops.object.select_all(action="DESELECT")
-
     bpy.context.view_layer.objects.active = parent_obj
+    bpy.ops.object.select_all(action="DESELECT")
     bpy.ops.object.select_grouped(extend=True, type="CHILDREN_RECURSIVE")
     parent_obj.select_set(True)
-
-
-def get_top_bottom_component_lists(
-    objects: List[bpy.types.Object] = [], enable_all: bool = False
-) -> Tuple[bpy.types.Object, bpy.types.Object]:
-    """
-    Get top and bottom component lists using char stored in 'PCB_Side' custom property.
-    This custom property is saved in objects when they're imported using picknblend tool.
-    If `enable_all` argument is set to true, all available components passed to function will be added to both of the lists.
-    """
-    top_comps = []
-    bot_comps = []
-    if enable_all:
-        top_comps = [obj for obj in objects if obj.name != "BBOX"]
-        bot_comps = top_comps.copy()
-    else:
-        components = bpy.data.collections.get("Components")
-        if not components:
-            return top_comps, bot_comps
-        for comp in components.objects:
-            if "PCB_Side" not in comp.keys():
-                continue
-            if comp["PCB_Side"] == "T":
-                top_comps.append(comp)
-            elif comp["PCB_Side"] == "B":
-                bot_comps.append(comp)
-    logger.debug(f"Read top components: {top_comps}")
-    logger.debug(f"Read bot components: {bot_comps}")
-    return top_comps, bot_comps
+    return bpy.context.selected_objects
 
 
 def get_top_parent(object: bpy.types.Object) -> bpy.types.Object:
@@ -162,6 +120,7 @@ def parent_list_to_object(
             continue
 
         # set parent for all child objects
+        bpy.ops.object.select_all(action="DESELECT")
         obj.select_set(True)
         parent.select_set(True)
         bpy.context.view_layer.objects.active = parent  # active obj will be parent
@@ -201,3 +160,22 @@ def hex_to_rgb(hex_number: str) -> tuple[float, ...]:
         decimal = int(hex_number[i : i + 2], 16)
         rgb.append(decimal / 255)
     return tuple(rgb)
+
+
+def add_empty(name: str, target_coll: bpy.types.Collection = None) -> bpy.types.Object:
+    """
+    Add empty object to the scene. If no target collection is specified, link to root scene collection.
+    """
+    object = bpy.data.objects.new(name, None)
+    if target_coll:
+        link_obj_to_collection(object, target_coll)
+    else:
+        bpy.context.scene.collection.objects.link(object)
+    return object
+
+
+def set_origin(object: bpy.types.Object):
+    object.select_set(True)
+    bpy.context.view_layer.objects.active = object
+    bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY", center="BOUNDS")
+    bpy.ops.object.select_all(action="DESELECT")
