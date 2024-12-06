@@ -14,7 +14,7 @@ import pcbooth.modules.custom_utilities as cu
 from pcbooth.modules.camera import Camera
 from pcbooth.modules.background import Background
 from pcbooth.modules.light import Light, disable_emission_nodes
-from pcbooth.modules.renderer import init_renderer
+from pcbooth.modules.renderer import init_render_settings
 
 
 logger = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ class Studio:
 
     def __init__(self, pcb_blend_path: str):
         cu.open_blendfile(pcb_blend_path)
-        init_renderer()
+        init_render_settings()
         self.collection = cu.get_collection("Studio")
 
         self.is_pcb: bool = False
@@ -41,6 +41,10 @@ class Studio:
         self.top_components: List[bpy.types.Object] = []
         self.bottom_components: List[bpy.types.Object] = []
         self.positions: Dict[str, Matrix] = {}
+        self.cameras: List[Camera] = []
+        self.backgrounds: List[Background] = []
+        self.lights: List[Light] = []
+        self.positions: List[str]
 
         self._configure_model_data()
         self._configure_position()
@@ -73,10 +77,13 @@ class Studio:
                 self.change_position(position)
                 camera.align(self.rendered_obj)
                 camera.save_position(position)
+                camera.save_focus(position)
 
         logger.info(
             f"Added {len(Camera.objects)} cameras to Studio: {[cam.object.name for cam in Camera.objects]}"
         )
+        self.cameras = Camera.objects
+        self.positions = positions
         self.change_position("TOP")
 
     def _add_backgrounds(self):
@@ -89,6 +96,7 @@ class Studio:
         logger.info(
             f"Added {len(Background.objects)} backgrounds to Studio: {[bg.object.name for bg in Background.objects]}"
         )
+        self.backgrounds = Background.objects
 
     def _add_lights(self):
         Light.add_collection()
@@ -100,6 +108,7 @@ class Studio:
         logger.info(
             f"Added {len(Light.objects)} lights to Studio: {[light.object.name for light in Light.objects]}"
         )
+        self.lights = Light.objects
 
     def _apply_effects(self):
         """Enable or disable additional studio effects"""
@@ -238,8 +247,8 @@ class Studio:
         """
         object = cu.get_top_parent(self.rendered_obj)
         object.rotation_euler = self.presets[key]
-        cu.apply_all_transforms(object)
         logger.debug(f"Moved {self.rendered_obj.name} to '{key}' position")
+        cu.update_depsgraph()
 
 
 def get_keys(cfg: Dict[str, bool], skipped: List[str]) -> List[str]:

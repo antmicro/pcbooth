@@ -3,14 +3,22 @@
 import bpy
 import logging
 from pathlib import Path
-from wand.image import Image
-from typing import Callable, Tuple
+from typing import Callable, Tuple, Optional
+
+from bpy.types import Image
 from pcbooth.modules.file_io import stdout_redirected, execute_cmd
 import pcbooth.modules.config as config
 from typing import Dict, List, Callable
+from pcbooth.modules.file_io import remove_file, mkdir
+from glob import glob
 
+from re import match
+from os import listdir
 
 logger = logging.getLogger(__name__)
+
+CACHE_FORMAT = "PNG"
+CACHE_NAME = "_tmp_render"
 
 
 def setup_ultralow_cycles() -> Tuple[bpy.types.PropertyGroup, bpy.types.PropertyGroup]:
@@ -144,14 +152,11 @@ def setup_gpu() -> None:
     device.use = True
 
 
-def init_renderer():
+def init_render_settings():
     """Setup initial renderer properties."""
-    logger.info("Setting up renderer...")
+    logger.info("Setting up initial render properties...")
     scene = bpy.context.scene
     renderer = bpy.context.scene.render
-
-    renderer.image_settings.file_format = config.blendcfg["SETTINGS"]["IMAGE_FORMAT"]
-    assign_color_mode()
 
     renderer.resolution_x = int(config.blendcfg["SETTINGS"]["IMAGE_WIDTH"])
     renderer.resolution_y = int(config.blendcfg["SETTINGS"]["IMAGE_HEIGHT"])
@@ -159,7 +164,7 @@ def init_renderer():
     renderer.engine = "CYCLES"
     renderer.film_transparent = True
     renderer.use_file_extension = True
-    # renderer.use_persistent_data = True  # more memory used, faster renders
+    renderer.use_persistent_data = True  # more memory used, faster renders
 
     scene.frame_start = 1
     scene.frame_end = int(config.blendcfg["SETTINGS"]["FPS"])
@@ -170,57 +175,134 @@ def init_renderer():
     setup_gpu()
 
 
-def assign_color_mode() -> None:
-    """
-    Assign color mode based on currently set file format. Defaults to RGBA,
-    if the chosen format doesn't support transparency, fallbacks to RGB
-    """
-    try:
-        bpy.context.scene.render.image_settings.color_mode = "RGBA"
-    except TypeError:
-        bpy.context.scene.render.image_settings.color_mode = "RGB"
+class RendererWrapper:
+    """Class responsible for rendering images and frames within Blender."""
 
+    def __init__(self) -> None:
+        self.formats = config.blendcfg["SETTINGS"]["IMAGE_FORMAT"]
+        self.img_ext = None
+        self.cache = None
+        self.cache_path = None
+        self.tmb_x = config.blendcfg["SETTINGS"]["THUMBNAIL_WIDTH"]
+        self.tmb_y = config.blendcfg["SETTINGS"]["THUMBNAIL_HEIGHT"]
+        self.render_path = config.renders_path
 
-def render(camera: bpy.types.Object, file_name: str) -> None:
-    """Render an image using specified camera and save under provided file name."""
-    scene = bpy.context.scene
-    scene.camera = camera
-    scene.render.filepath = config.renders_path + file_name
-    ext = scene.render.file_extension
-    abs_path = scene.render.filepath + ext
+    def _set_image_format(self, format: str) -> None:
+        """
+        Set render file format and assign matching color mode. Color mode defaults to RGBA,
+        if the chosen format doesn't support transparency, fallbacks to RGB. Assigns
+        image file extension
+        """
+        bpy.context.scene.render.image_settings.file_format = format
+        self.img_ext = bpy.context.scene.render.file_extension
+        try:
+            bpy.context.scene.render.image_settings.color_mode = "RGBA"
+        except TypeError:
+            bpy.context.scene.render.image_settings.color_mode = "RGB"
 
-    logger.info(f"Rendering {file_name}{ext}...")
-    with stdout_redirected():
-        bpy.ops.render.render(write_still=True)
+    def _init_render(self, camera: bpy.types.Object) -> None:
+        """
+        Render initial image and save in  renders directory to be used as cache.
+        Uses CACHE_FORMAT and CACHE_NAME variables to determine file name and extension.
+        """
+        scene = bpy.context.scene
+        scene.camera = camera
+        scene.render.filepath = self.render_path + CACHE_NAME
 
-    if Path(abs_path).exists():
-        logger.info(f"Render completed, saved as: {bpy.path.relpath(abs_path)}")
-    else:
-        logger.error(f"Render failed for {bpy.path.relpath(abs_path)}")
+        self._set_image_format(CACHE_FORMAT)
+        self.cache_path = scene.render.filepath + self.img_ext
 
+        with stdout_redirected():
+            bpy.ops.render.render(write_still=True)
+        try:
+            self.cache = bpy.data.images.load(self.cache_path)
+            logger.debug(f"Render completed, saved temp file to: {self.cache_path}")
+        except (RuntimeError, AttributeError):
+            logger.error(f"Can't load cache from {self.cache_path}")
 
-def render_animation(camera: bpy.types.Object, file_name: str) -> None:
-    """Render sequence of images iterating over frame count range from bpy.context.scene"""
-    scene = bpy.context.scene
-    for frame in range(scene.frame_start, scene.frame_end + 1):
-        frame_name = f"{file_name}_{frame:04}"
-        scene.frame_set(frame)
-        render(camera, frame_name)
+    @staticmethod
+    def _save_render(image: bpy.types.Image, filepath: str) -> None:
+        try:
+            image.save_render(filepath=filepath)
+            logger.info(f"Saved render as: {bpy.path.relpath(filepath)}")
+        except (RuntimeError, AttributeError):
+            logger.error(f"Save failed for {bpy.path.relpath(filepath)}")
 
+    def render(
+        self,
+        camera: bpy.types.Object,
+        file_name: str,
+        format_override: Optional[str] = None,
+    ) -> bpy.types.Image:
+        """
+        Render an image using specified camera and save under provided file name.
+        Optional format_override can be used to ignore format list from config file.
+        Uses cached render from _init_render method.
+        """
+        if not self.cache:
+            logger.info(f"Rendering {file_name}...")
+            self._init_render(camera)
+            if not self.cache:
+                return
 
-def make_thumbnail(filepath: str) -> None:
-    """Make thumbnail copy of an image."""
-    ext = bpy.context.scene.render.file_extension
+        scene = bpy.context.scene
+        scene.render.filepath = self.render_path + file_name
+        formats = [format_override] if format_override else self.formats
 
-    image_path = filepath + ext
-    thumbnail_path = filepath + "_thumbnail" + ext
-    width = config.blendcfg["SETTINGS"]["THUMBNAIL_WIDTH"]
-    height = config.blendcfg["SETTINGS"]["THUMBNAIL_HEIGHT"]
+        for format in formats:
+            self._set_image_format(format)
+            abs_path = scene.render.filepath + self.img_ext
+            self._save_render(self.cache, abs_path)
 
-    with Image(filename=image_path) as img, img.clone() as thumbnail:
-        thumbnail.thumbnail(width, height)
-        thumbnail.save(filename=thumbnail_path)
-        logger.info(f"Prepared thumbnail: {thumbnail_path}")
+    def thumbnail(
+        self,
+        camera: bpy.types.Object,
+        file_name: str,
+        format_override: Optional[str] = None,
+    ) -> None:
+        """
+        Make thumbnail copy of a rendered image. Uses previously saved render image data.
+        Uses cached render from _init_render method.
+        """
+        if not self.cache:
+            logger.info(f"Rendering {file_name}...")
+            self.cache = self._init_render(camera)
+            if not self.cache:
+                return
+
+        scene = bpy.context.scene
+        scene.render.filepath = self.render_path + file_name
+        formats = [format_override] if format_override else self.formats
+
+        for format in formats:
+            self._set_image_format(format)
+            abs_path = scene.render.filepath + "_thumbnail" + self.img_ext
+
+            new_render = self.cache.copy()
+            new_render.scale(self.tmb_x, self.tmb_y)
+            self._save_render(new_render, abs_path)
+            bpy.data.images.remove(new_render)
+
+    def render_animation(self, camera: bpy.types.Object, file_name) -> None:
+        """
+        Render sequence of images iterating over frame count range from bpy.context.scene.
+        Clears cache after each frame as they are not supposed to be rendered as mutliple format.
+        """
+        scene = bpy.context.scene
+        for frame in range(scene.frame_start, scene.frame_end + 1):
+            frame_name = f"{file_name}_{frame:04}"
+            scene.frame_set(frame)
+            self.render(camera, frame_name, CACHE_FORMAT)
+            self.clear_cache()
+
+    def clear_cache(self):
+        """
+        Remove render cache file. Looks for CACHE_NAME files. Sets cache attribute to None.
+        """
+        logger.debug("Removing cached render.")
+        if not config.blendcfg["SETTINGS"]["KEEP_PNGS"]:
+            remove_file(self.cache_path)
+        self.cache = None
 
 
 class FFmpegWrapper:
@@ -253,39 +335,53 @@ class FFmpegWrapper:
     }
 
     def __init__(self) -> None:
-        self.format = config.blendcfg["SETTINGS"]["VIDEO_FORMAT"]
-        self.vid_ext = f".{self.format.lower()}"
+        self.formats = config.blendcfg["SETTINGS"]["VIDEO_FORMAT"]
+        self.format = None
+        self.vid_ext = None
         self.img_ext = bpy.context.scene.render.file_extension
         self.res_x = config.blendcfg["SETTINGS"]["VIDEO_WIDTH"]
         self.res_y = config.blendcfg["SETTINGS"]["VIDEO_HEIGHT"]
         self.tmb_x = config.blendcfg["SETTINGS"]["THUMBNAIL_WIDTH"]
         self.tmb_y = config.blendcfg["SETTINGS"]["THUMBNAIL_HEIGHT"]
         self.fps = config.blendcfg["SETTINGS"]["FPS"]
+        self.animation_path = config.animations_path
+        self.render_path = config.renders_path
+
+    def _set_video_format(self, format: str) -> None:
+        """Set sequencer video output format and file extension."""
+        self.format = format
+        self.vid_ext = f".{self.format.lower()}"
 
     def run(self, input_file: str, output_file: str) -> None:
         """Run FFPMEG and sequence images into full-scale animation."""
-        input_dict = {
-            "-i": f"{config.renders_path}{input_file}_%04d{self.img_ext}",
-            "-framerate": str(self.fps),
-            "-s": f"{self.res_x}x{self.res_y}",
-        }
-        self._sequence(input_dict, output_file)
+        for format in self.formats:
+            self._set_video_format(format)
+            input_dict = {
+                "-i": f"{self.render_path}{input_file}_%04d.png",
+                "-framerate": str(self.fps),
+                "-s": f"{self.res_x}x{self.res_y}",
+            }
+            self._sequence(input_dict, output_file)
 
     def reverse(self, input_file: str, output_file: str) -> None:
         """Reverse existing video file."""
-        input_dict = {
-            "-i": f"{config.animations_path}{input_file}{self.vid_ext}",
-            "-vf": "reverse",
-        }
-        self._sequence(input_dict, output_file)
+        for format in self.formats:
+            self._set_video_format(format)
+            input_dict = {
+                "-i": f"{self.animation_path}{input_file}{self.vid_ext}",
+                "-vf": "reverse",
+            }
+            self._sequence(input_dict, output_file)
 
     def thumbnail(self, input_file: str, output_file: str) -> None:
         """Scale existing video file down into thumbnail."""
-        input_dict = {
-            "-i": f"{config.animations_path}{input_file}{self.vid_ext}",
-            "-vf": f"scale={self.tmb_x}:{self.tmb_y}",
-        }
-        self._sequence(input_dict, output_file, suffix="_thumbnail")
+        for format in self.formats:
+            self._set_video_format(format)
+            input_dict = {
+                "-i": f"{self.animation_path}{input_file}{self.vid_ext}",
+                "-vf": f"scale={self.tmb_x}:{self.tmb_y}",
+            }
+            self._sequence(input_dict, output_file, suffix="_thumbnail")
 
     def _sequence(
         self,
@@ -296,10 +392,11 @@ class FFmpegWrapper:
         """Execute FFMPEG command."""
 
         preset_dict = FFmpegWrapper.FORMAT_ARGUMENTS[self.format]
-        full_output_file = (
-            f"{config.animations_path}{output_file}{suffix}{self.vid_ext}"
+        full_output_file = Path(
+            f"{self.animation_path}{output_file}{suffix}{self.vid_ext}"
         )
 
+        mkdir(str(full_output_file.parent))
         cmd = self._get_cmd(input_dict | preset_dict, full_output_file)
         execute_cmd(cmd, stdout=True, stderr=True)
         logger.info(f"Sequenced (FFMPEG): {full_output_file}")
@@ -312,3 +409,17 @@ class FFmpegWrapper:
             + [output_file]
             + ["-y"]
         )
+
+    def clear_frames(self):
+        """
+        Remove frame files after sequencing.
+        Recognizes <filename>_<frame_number>.<ext> filenames using regex.
+        Expects 4-digit frame number.
+        """
+        logger.debug("Removing frames.")
+        pattern = r"^.+_\d{4}..+$"
+        if config.blendcfg["SETTINGS"]["KEEP_PNGS"]:
+            return
+        for file in listdir(self.render_path):
+            if match(pattern, file):
+                remove_file(self.render_path + file)

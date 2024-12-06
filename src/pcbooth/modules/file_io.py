@@ -126,11 +126,23 @@ def stdout_redirected(to=os.devnull):
             _redirect_stdout(to=old_stdout)  # restore stdout
 
 
+def mkdir(path: str) -> None:
+    """Create a directory at the specified path.
+
+    Wraps any errors with a nicer error exception.
+    """
+    try:
+        os.makedirs(path, exist_ok=True)
+    except OSError as e:
+        raise RuntimeError(f"Could not create folder at path {path}: {repr(e)}") from e
+
+
 def remove_file(filepath: str) -> None:
     """Remove file from the specified path."""
     try:
         os.remove(filepath)
-    except FileNotFoundError:
+        logger.debug(f"Removed {filepath}")
+    except (FileNotFoundError, IsADirectoryError):
         pass
 
 

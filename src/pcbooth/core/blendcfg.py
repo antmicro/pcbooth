@@ -260,9 +260,11 @@ def check_throw_error(cfg: Dict[str, Any], args: list[str], schema: Field) -> No
             assert isinstance(val, list), not_schema_type_err
             assert all(isinstance(x, str) for x in val), not_schema_type_err
         case "image_format":
-            assert is_image_format(val), image_file_format_err
+            assert isinstance(val, list), not_schema_type_err
+            assert all(is_image_format(x) for x in val), image_file_format_err
         case "video_format":
-            assert is_video_format(val), video_file_format_err
+            assert isinstance(val, list), not_schema_type_err
+            assert all(is_video_format(x) for x in val), video_file_format_err
         case _:
             raise RuntimeError(f"[{args[0]}][{args[1]}] is not a {schema.type}")
 

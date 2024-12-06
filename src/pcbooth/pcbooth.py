@@ -1,16 +1,19 @@
 import traceback
-import sys
 import argparse
-from os import path, getcwd
+import importlib
+import inspect
 import logging
+import os
+import pkgutil
+import sys
+from typing import Any, Optional
 
+import pcbooth.core.job
 import pcbooth.modules.config as config
 import pcbooth.modules.custom_utilities as cu
 import pcbooth.core.blendcfg as blendcfg
 import pcbooth.core.log as log
 from pcbooth.modules.studio import Studio
-from pcbooth.modules.camera import Camera
-from pcbooth.modules.renderer import render
 
 
 logger = logging.getLogger(__name__)
@@ -58,26 +61,101 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def import_python_submodules() -> None:
+    """Import all available extension Python submodules from the environment."""
+    # Look in the `modules` directory under site-packages
+    modules_path = os.path.join(os.path.dirname(__file__), "jobs")
+    for _, module_name, _ in pkgutil.walk_packages(
+        [modules_path], prefix="pcbooth.jobs."
+    ):
+        logger.debug("Importing Python submodule: %s", module_name)
+        try:
+            importlib.import_module(module_name)
+        except Exception as e:
+            logger.warning("Python submodule %s failed to load!", module_name)
+            logger.debug("Submodule load exception: %s", str(e))
+
+
+def find_module(name: str) -> Optional[type]:
+    """Find a class that matches the given module name.
+
+    This matches a config job name, for example TRANSITIONS, to a Python
+    class defined somewhere within the available Python environment.
+    The class must derive from `Job` available in core/job.py.
+    """
+    for _, obj in inspect.getmembers(sys.modules["pcbooth.jobs"]):
+        if not inspect.ismodule(obj):
+            continue
+
+        for subname, subobj in inspect.getmembers(obj):
+            uppercase_name = subname.upper()
+            if (
+                inspect.isclass(subobj)
+                and issubclass(subobj, pcbooth.core.job.Job)
+                and name == uppercase_name
+            ):
+                logger.debug("Found module: %s in %s", subname, obj)
+                return subobj
+
+    return None
+
+
+def create_modules(config: list[dict[Any, Any]]) -> list[pcbooth.core.job.Job]:
+    """Create jobs based on the blendcfg.yaml configuration file."""
+    import_python_submodules()
+
+    runnable_modules = []
+
+    logger.debug("Execution plan:")
+    for v in config:
+        name = next(iter(v))
+        logger.debug("Job %s:", name)
+
+        # Find a class that matches the module name
+        class_type = find_module(name)
+        if not class_type:
+            raise RuntimeError(
+                f"Could not find job {name} anywhere! "
+                "Have you defined a class for the module, and is it a subclass of pcbooth.core.job.Job?"
+            )
+
+        # We got a type, we can now create the object
+        # This is just a constructor call
+        try:
+            module = class_type()
+            runnable_modules.append(module)
+        except Exception as e:
+            raise RuntimeError(f"Failed to create module {name}: {str(e)}") from e
+
+    return runnable_modules
+
+
+def run_modules_for_config(conf: dict[Any, Any], studio: Studio) -> None:
+    """Run all module processing jobs for the specified blendcfg.yaml."""
+    modules = create_modules(conf["OUTPUTS"])
+
+    logger.info("Number of jobs to run: %d", len(modules))
+    for job in modules:
+        logger.debug("Running module: %s", job)
+        job.execute(studio)
+        logger.debug("Finished running: %s", job)
+
+
 def main():
     try:
         args = parse_args()
         log.set_logging(args.debug)
 
         if args.get_config:
-            prj_path = getcwd() + "/"
-            pcbt_dir_path = path.dirname(__file__)
+            prj_path = os.getcwd() + "/"
+            pcbt_dir_path = os.path.dirname(__file__)
             blendcfg.check_and_copy_blendcfg(prj_path, pcbt_dir_path, force=True)
             return 0
 
         config.init_global(args)
         studio = Studio(config.pcb_blend_path)
-        for camera in Camera.objects:
-            for position in camera.positions:
-                print(position)
-                studio.change_position(str(position))
-                render(camera.object, f"test_{camera.object.name}_{position}")
-
         cu.save_pcb_blend("test.blend")
+        run_modules_for_config(config.blendcfg, studio)
 
     except Exception:
         print(traceback.format_exc())

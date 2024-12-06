@@ -6,7 +6,7 @@ from pcbooth.modules.bounding_box import Bounds
 import pcbooth.modules.config as config
 from math import radians
 from mathutils import Matrix
-from typing import Tuple, Dict, List, ClassVar
+from typing import Tuple, Dict, List, ClassVar, Self, Tuple
 import logging
 
 logger = logging.getLogger(__name__)
@@ -33,6 +33,14 @@ class Camera:
         collection = cu.get_collection("Cameras", studio)
         cls.collection = collection
 
+    @classmethod
+    def get(cls, name: str) -> Self | None:
+        """Get Camera object by name string."""
+        for object in cls.objects:
+            if object.name == name:
+                return object
+        return None
+
     def __init__(
         self,
         name: str = "",
@@ -45,7 +53,9 @@ class Camera:
             )
 
         self.positions: Dict[str, Matrix] = {}
+        self.focuses: Dict[str, Tuple[float, float]] = {}
         self.object: bpy.types.Object = self._add(name, rotation, camera)
+        self.name = name
         self._set_defaults()
 
     def _add(
@@ -84,17 +94,41 @@ class Camera:
         """
         Save position of the camera to the dictionary under provided key.
         """
+        cu.update_depsgraph()
         self.positions[key] = self.object.matrix_world.copy()
         logger.debug(
             f"Saved {self.object.name} location: \n{self.positions[key]} as '{key}'"
         )
 
+    def save_focus(self, key: str):
+        """
+        Save focus parameters of the camera to the dictionary under provided key.
+        Value is a tuple of (focus_distance, aperture_fstop)
+        """
+        self.focuses[key] = (
+            self.object.data.dof.focus_distance,
+            self.object.data.dof.aperture_fstop,
+        )
+        logger.debug(
+            f"Saved {self.object.name} focus: \n{self.focuses[key]} as '{key}'"
+        )
+
     def change_position(self, key: str):
         """
-        Move camera to position saved in dictionary.
+        Move camera to position saved in dictionary. Updates focus as well.
         """
         self.object.matrix_world = self.positions[key].copy()
-        logger.debug(f"Moved {self.object.name} to '{key}' position")
+        self.change_focus(key)
+        logger.debug(f"Moved {self.object.name} to '{key}' position.")
+        cu.update_depsgraph()
+
+    def change_focus(self, key: str):
+        """
+        Use camera focus parameters from position saved in dictionary.
+        """
+        self.object.data.dof.focus_distance = self.focuses[key][0]
+        self.object.data.dof.aperture_fstop = self.focuses[key][1]
+        logger.debug(f"Changed focus of {self.object.name} to '{key}' position.")
 
     def frame_selected(
         self,
@@ -111,6 +145,7 @@ class Camera:
         bpy.ops.view3d.camera_to_view_selected()
         bpy.ops.object.select_all(action="DESELECT")
         self.object.location *= zoom
+        cu.update_depsgraph()
 
         logger.debug(f"frame_selected function used for {self.object.name}")
 
@@ -149,3 +184,37 @@ class Camera:
 
         self.frame_selected(object, **frame_selected_args)
         self.set_focus(object, **set_focus_args)
+
+    def add_keyframe(self, frame, translations: bool = True, focus: bool = True):
+        """
+        Add keyframe operation to be performed after changing camera position and/or focus.
+        Keyframe is added at specified frame.
+        """
+        if translations:
+            self.object.keyframe_insert(data_path="rotation_euler", frame=frame)
+            self.object.keyframe_insert(data_path="location", frame=frame)
+        if focus:
+            self.object.data.dof.keyframe_insert(
+                data_path="focus_distance", frame=frame
+            )
+            self.object.data.dof.keyframe_insert(
+                data_path="aperture_fstop", frame=frame
+            )
+
+    def add_intermediate_keyframe(
+        self, rendered_obj: bpy.types.Object, progress: float, zoom: float = 1.0
+    ):
+        """
+        Insert intermediate keyframes for the camera at a specified fraction of the animation timeline, aligning it with the rendered object.
+        This ensures the object remains within the camera frame during interpolated movement. The method also allows optional adjustment of the
+        camera's position by applying a zoom factor.
+        """
+        scene = bpy.context.scene
+
+        scene.frame_set(int(scene.frame_end * progress))
+        self.frame_selected(rendered_obj)
+        self.object.location *= zoom
+        self.object.keyframe_insert(
+            data_path="rotation_euler", frame=scene.frame_current
+        )
+        self.object.keyframe_insert(data_path="location", frame=scene.frame_current)

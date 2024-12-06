@@ -179,3 +179,14 @@ def set_origin(object: bpy.types.Object):
     bpy.context.view_layer.objects.active = object
     bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY", center="BOUNDS")
     bpy.ops.object.select_all(action="DESELECT")
+
+
+def clear_animation_data():
+    """
+    Remove any animation data if it was added by the job.
+    TODO: for now this will remove all existing actions, so there needs to be some way
+            to backup user predefined keyframes
+    """
+    logger.debug("Clearing animation data.")
+    for action in bpy.data.actions:
+        bpy.data.actions.remove(action)

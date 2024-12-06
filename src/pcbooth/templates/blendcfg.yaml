@@ -10,8 +10,12 @@ default: &default
     THUMBNAIL_HEIGHT: 320
     KEEP_PNGS: False
     THUMBNAILS: True                # enables thumbnails for eligible outputs
-    IMAGE_FORMAT: PNG
-    VIDEO_FORMAT: WEBM
+    IMAGE_FORMAT: 
+      - PNG
+      - JPEG
+    VIDEO_FORMAT: 
+      - WEBM
+      - GIF
     RENDER_DIR: blender_renders     # default directory name for storing renders
     ANIMATION_DIR: assets/previews     # default directory name for storing renders
     FAB_DIR: fab                    # default directory name containing fabrication files
@@ -21,7 +25,8 @@ default: &default
     SAVE_SCENE: False               # saves *_scene.blend file with entire studio and camera setup included
     BACKGROUND: 
       - paper_black         # name of .blend file from 'antmicro-blender-models/lib/backgrounds' containing background
-                                    # use Transparent to render w/o background; can be multiple values separated by comma
+      - paper_white
+      - transparent                              # use Transparent to render w/o background; can be multiple values separated by comma
     LIGHTS_COLOR: FFFFFF
     LIGHTS_INTENSITY: 17000
     ENVTEXTURE_INTENSITY: 0.2
@@ -41,20 +46,14 @@ default: &default
 
   OBJECT:
     TOP: True
-    BOTTOM: False
+    BOTTOM: True
     REAR: False
     AUTO_ROTATE: True
     RENDERED_OBJECT: 
 
-  OUTPUT:
-    STATIC: True
-    STACKUP: False                    # if True, requires stackup.json output, generates board split into layers
-    KEYFRAMES: True
-    #HOTAREAS: False                   # if True, hotareas for components will be rendered for picked views
-    #ANIMATIONS: False
-    #TRANSITIONS: False, Renders       # options = All - renders all 28 transitions, Renders - renders transitions for views picked in RENDERS settings, Iso - renders front/rear/bottom transitions in isometric view
-    #EXPLODEDVIEW: False               # for assembly-type models only, enables assembly/dissasembly animation, will grab existing keyframes or attempt to generate own  
-
+  OUTPUTS:
+    - STATIC:
+    - FLIPTRANSITION:
 
 
     

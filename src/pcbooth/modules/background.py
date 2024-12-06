@@ -2,7 +2,7 @@
 
 import bpy
 import logging
-from typing import List, ClassVar
+from typing import List, ClassVar, Self
 
 import pcbooth.modules.config as config
 import pcbooth.modules.file_io as fio
@@ -25,6 +25,14 @@ class Background:
         cls.collection = collection
 
     @classmethod
+    def get(cls, name: str) -> Self | None:
+        """Get Camera object by name string."""
+        for object in cls.objects:
+            if object.name == name:
+                return object
+        return None
+
+    @classmethod
     def update_position(cls, object: bpy.types.Object):
         """Update position of all imported backgrounds in relation to current lowest point of rendered object"""
         with Bounds(cu.select_all(object)) as target:
@@ -34,22 +42,19 @@ class Background:
         cu.update_depsgraph()
 
     @classmethod
-    def use(cls, name: str = ""):
+    def use(cls, background: "Background"):
         """Make specified background enabled for rendering"""
         for bg in cls.objects:
             bg.object.hide_render = True
-        if background := bpy.data.objects.get(name):
-            background.hide_render = False
-            logger.debug(f"Enabling '{name}' background for render.")
-        else:
-            logger.warning(f"Requested background '{name}' was not found!")
+        background.object.hide_render = False
+        logger.debug(f"Enabling '{background.object.name}' background for render.")
 
     def __init__(self, name: str = ""):
         if not Background.collection:
             raise ValueError(
                 f"Backgrounds collection is not added, call add_collection class method before creating an instance."
             )
-
+        self.name: str = name
         self.object: bpy.types.Object = self._add(name)
 
     def _add(self, name: str = "") -> bpy.types.Object:

@@ -31,7 +31,6 @@ pcbooth = "pcbooth.pcbooth:main"
 [tool.poetry.dependencies]
 python = "3.11.*"
 pyyaml = "^6.0.1"
-wand = "^0.6.13"
 bpy = "4.1"
 HiYaPyCo = "0.1.0"
 pyxdg = "0.28"

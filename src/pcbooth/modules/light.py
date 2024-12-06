@@ -2,7 +2,7 @@
 
 import bpy
 from math import radians
-from typing import List, Tuple, Dict, ClassVar
+from typing import List, Tuple, Dict, ClassVar, Self
 import logging
 
 import pcbooth.modules.config as config
@@ -90,6 +90,14 @@ class Light:
         collection = cu.get_collection("Lights", studio)
         cls.collection = collection
         load_hdri()
+
+    @classmethod
+    def get(cls, name: str) -> Self | None:
+        """Get Camera object by name string."""
+        for object in cls.objects:
+            if object.name == name:
+                return object
+        return None
 
     @classmethod
     def bind_to_object(cls, object: bpy.types.Object) -> None:
