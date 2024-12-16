@@ -25,11 +25,10 @@ default: &default
     SAVE_SCENE: False               # saves *_scene.blend file with entire studio and camera setup included
     BACKGROUND: 
       - paper_black         # name of .blend file from 'antmicro-blender-models/lib/backgrounds' containing background
-      - paper_white
       - transparent                              # use Transparent to render w/o background; can be multiple values separated by comma
     LIGHTS_COLOR: FFFFFF
-    LIGHTS_INTENSITY: 17000
-    ENVTEXTURE_INTENSITY: 0.2
+    LIGHTS_INTENSITY: 1.0
+    ENVTEXTURE_INTENSITY: 0.5
     DEPTH_OF_FIELD: True
     LED_ON: False
 
@@ -40,7 +39,7 @@ default: &default
     FRONT: False
     LEFT: False
     RIGHT: False
-    PHOTO1: True
+    PHOTO1: False
     PHOTO2: False
     CUSTOM: False
 

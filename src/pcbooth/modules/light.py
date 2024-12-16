@@ -24,7 +24,7 @@ def load_hdri() -> None:
     texture_coordinate = nodes.new(type="ShaderNodeTexCoord")
 
     mapping = nodes.new(type="ShaderNodeMapping")
-    mapping.inputs["Rotation"].default_value = (radians(-30), radians(0), radians(90))
+    mapping.inputs["Rotation"].default_value = (radians(-30), radians(0), radians(160))
 
     hdri = nodes.new("ShaderNodeTexEnvironment")
     hdri.image = bpy.data.images.load(config.env_texture_path)
@@ -44,18 +44,41 @@ def load_hdri() -> None:
     logger.info(f"Configured HDRI ({config.env_texture_path})")
 
 
-def scale_light_intensity(intensity: int, x: float, y: float) -> float:
-    """Calculate scaled light intensity in relation to rendered object dimensions."""
-    ratio = max(x / 120, y / 60, 1)
-    return intensity * ratio**1.2
+def calculate_light_intensity(scale: int, x: float, y: float) -> float:
+    """
+    Calculate scaled light intensity in relation to rendered object dimensions.
+    Uses linear relation between longer x or y dimension of the model.
+    Uses 4000W intensity as a base.
+    Returns base intensity as constant for models with max(x,y) < 45.
+    Otherwise calculates intensity using base and multiplier.
+    """
+    base = 4000
+    max_dim = max(x, y)
+    return (260 * max_dim + base) * scale if max_dim > 45 else base * scale
 
 
 def calculate_z_coordinate(max_z: float, x: float, y: float) -> float:
-    base_z = 58
-    ratio = max(x / 120, y / 60)
-    if ratio < 1:
-        return max_z + ratio * base_z
-    return max_z + base_z
+    """
+    Calculate Z coordinate of the light object. Adds model's max Z dimension to calculated base.
+    Uses linear relation between longer x or y dimension of the model. Caps base at 70 for
+    models with longer edge of above 65.
+    """
+    base = 70
+    max_dim = max(x, y)
+    return max_z + base if max_dim > 65 else max_z + 0.289 * max_dim + 22.3
+
+
+def calculate_light_size(x: float, y: float) -> Tuple[float, float]:
+    """
+    Calculate light object x and y dimension. Uses linear relation between model's dimensions.
+    Assumes longer edge is x.
+    """
+    max_dim = max(x, y)
+    min_dim = min(x, y)
+
+    x_size = 1.05 * max_dim + 34.9
+    y_size = 0.275 * min_dim * 19.6
+    return (x_size, y_size)
 
 
 def disable_emission_nodes() -> None:
@@ -157,11 +180,13 @@ class Light:
         config_intensity = (
             config.blendcfg["STUDIO_EFFECTS"]["LIGHTS_INTENSITY"] * intensity
         )
-        light.energy = scale_light_intensity(config_intensity, Light.obj_x, Light.obj_y)
+        light.energy = calculate_light_intensity(
+            config_intensity, Light.obj_x, Light.obj_y
+        )
 
-        margin = max(Light.obj_x, Light.obj_y) * 0.4
-        light.size = Light.obj_x + margin
-        light.size_y = Light.obj_y + margin
+        light_size = calculate_light_size(Light.obj_x, Light.obj_y)
+        light.size = light_size[0]
+        light.size_y = light_size[1]
 
         object = bpy.data.objects.new(light_name, light)
         object.rotation_euler = rotation
@@ -171,6 +196,7 @@ class Light:
         cu.update_depsgraph()
         logger.debug(f"Added light object at: \n{object.matrix_world}")
         Light.objects.append(self)
+
         return object
 
     # TODO: add some kind of update position method to be used when animating rotations of rendered object

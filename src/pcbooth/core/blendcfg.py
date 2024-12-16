@@ -89,7 +89,7 @@ CONFIGURATION_SCHEMA = {
         "SAVE_SCENE": Field("bool"),
         "BACKGROUND": Field("list[str]"),
         "LIGHTS_COLOR": Field("color"),
-        "LIGHTS_INTENSITY": Field("int"),
+        "LIGHTS_INTENSITY": Field("float"),
         "ENVTEXTURE_INTENSITY": Field("float"),
         "DEPTH_OF_FIELD": Field("bool"),
         "LED_ON": Field("bool"),

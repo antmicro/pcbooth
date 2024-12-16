@@ -5,6 +5,8 @@ from mathutils import Matrix
 from math import radians
 import logging
 from typing import List
+import re
+
 
 logger = logging.getLogger(__name__)
 
@@ -131,7 +133,7 @@ def parent_list_to_object(
 def link_obj_to_collection(
     obj: bpy.types.Object, target_coll: bpy.types.Collection
 ) -> None:
-    """Loop through all collections the obj is linked to and unlink it from there, then link to targed collection."""
+    """Loop through all collections the obj is linked to and unlink it from there, then link to target collection."""
     for coll in obj.users_collection:  # type: ignore
         coll.objects.unlink(obj)
     target_coll.objects.link(obj)
@@ -190,3 +192,23 @@ def clear_animation_data():
     logger.debug("Clearing animation data.")
     for action in bpy.data.actions:
         bpy.data.actions.remove(action)
+
+
+def get_linked() -> List[bpy.types.Object]:
+    """
+    Get all linked objects in the scene. Returns list of Object of collection instance types.
+    Those objects can be used as parent of the linked collections for translations or defining
+    visibility
+    """
+    return [
+        object for object in bpy.data.objects if object.instance_type == "COLLECTION"
+    ]
+
+
+def get_designator(object: bpy.types.Object) -> str:
+    """
+    Extract designator part out of object's name using regex.
+    Expects <DES><idx>:<component value> string as object name.
+    """
+    regexp = r"^([A-Z]+\d+)\:*"
+    return re.search(regexp, object.name).group(1)

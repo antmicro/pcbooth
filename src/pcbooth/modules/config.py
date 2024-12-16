@@ -67,7 +67,7 @@ def configure_paths(arguments: argparse.Namespace) -> None:
     global pcb_blend_path
     global PCB_name
 
-    env_texture_path = pcbt_dir_path + "/templates/studio_small_03_4k.exr"
+    env_texture_path = pcbt_dir_path + "/templates/studio_small_08_4k.exr"
     backgrounds_path = pcbt_dir_path + "/templates/backgrounds/"
     renders_path = prj_path + blendcfg["SETTINGS"]["RENDER_DIR"] + "/"
     animations_path = prj_path + blendcfg["SETTINGS"]["ANIMATION_DIR"] + "/"
