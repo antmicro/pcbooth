@@ -24,11 +24,7 @@ CACHE_NAME = "_tmp_render"
 def setup_ultralow_cycles() -> Tuple[bpy.types.PropertyGroup, bpy.types.PropertyGroup]:
     """
     Configure the Cycles render engine for ultra-low quality and to minimize the time required to render an image.
-    Returns backup properties as a tuple.
     """
-    cycles_backup = bpy.context.scene.cycles.copy()
-    cycles_visibility_backup = bpy.context.scene.world.cycles_visibility.copy()
-
     cycles = bpy.context.scene.cycles
     cycles.samples = 1
     cycles.use_denoising = False
@@ -44,13 +40,34 @@ def setup_ultralow_cycles() -> Tuple[bpy.types.PropertyGroup, bpy.types.Property
     cycles_visibility.transmission = False
     cycles_visibility.scatter = False
 
-    return (cycles_backup, cycles_visibility_backup)
+    bpy.context.scene.render.film_transparent = False
 
 
-def revert_cycles(cycles_backup, cycles_visibility_backup) -> None:
-    """Restore Cycles setup from backup data."""
-    bpy.context.scene.cycles = cycles_backup
-    bpy.context.scene.world.cycles_visibility = cycles_visibility_backup
+def restore_default_cycles() -> None:
+    """
+    Restore Cycles and Cycles visibility settings to default, then initialize renderer from config.
+    This will restore GPU and compositing settings as well.
+    """
+    cycles = bpy.context.scene.cycles
+    for prop in dir(cycles):
+        if not prop.startswith("_") and hasattr(cycles, prop):
+            try:
+                default_value = bpy.types.CyclesSettings.bl_rna.properties[prop].default
+                setattr(cycles, prop, default_value)
+            except AttributeError:
+                pass
+
+    cycles_visibility = bpy.context.scene.world.cycles_visibility
+    for prop in dir(cycles_visibility):
+        if not prop.startswith("_") and hasattr(cycles_visibility, prop):
+            try:
+                default_value = bpy.types.CyclesVisibilitySettings.bl_rna.properties[
+                    prop
+                ].default
+                setattr(cycles_visibility, prop, default_value)
+            except AttributeError:
+                pass
+    init_render_settings()
 
 
 def compositing(set) -> Callable:
@@ -95,7 +112,7 @@ def set_lqbw_compositing() -> None:
     mix_node = tree.nodes.new(type="CompositorNodeMixRGB")
     rgb_white_node = tree.nodes.new(type="CompositorNodeRGB")
     rgb_black_node = tree.nodes.new(type="CompositorNodeRGB")
-    rgb_white_node.outputs[0].default_value[:] = 0.6, 0.6, 0.6, 1
+    rgb_white_node.outputs[0].default_value[:] = 1, 1, 1, 1
     rgb_black_node.outputs[0].default_value[:] = 0.0, 0.0, 0.0, 1
 
     links = tree.links
@@ -104,11 +121,11 @@ def set_lqbw_compositing() -> None:
         mix_node.inputs[0],
     )
     links.new(
-        rgb_white_node.outputs["RGBA"],
+        rgb_black_node.outputs["RGBA"],
         mix_node.inputs[1],
     )
     links.new(
-        rgb_black_node.outputs["RGBA"],
+        rgb_white_node.outputs["RGBA"],
         mix_node.inputs[2],
     )
     links.new(
@@ -171,7 +188,6 @@ def init_render_settings():
     scene.cycles.samples = config.blendcfg["SETTINGS"]["SAMPLES"]
     scene.cycles.use_denoising = True
 
-    set_default_compositing()
     setup_gpu()
 
 

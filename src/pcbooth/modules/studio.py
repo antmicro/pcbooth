@@ -14,7 +14,7 @@ import pcbooth.modules.custom_utilities as cu
 from pcbooth.modules.camera import Camera
 from pcbooth.modules.background import Background
 from pcbooth.modules.light import Light, disable_emission_nodes
-from pcbooth.modules.renderer import init_render_settings
+from pcbooth.modules.renderer import init_render_settings, set_default_compositing
 
 
 logger = logging.getLogger(__name__)
@@ -30,6 +30,7 @@ class Studio:
     def __init__(self, pcb_blend_path: str):
         cu.open_blendfile(pcb_blend_path)
         init_render_settings()
+        set_default_compositing()
         self.collection = cu.get_collection("Studio")
 
         self.is_pcb: bool = False
@@ -40,7 +41,6 @@ class Studio:
         self.display_rot: int = 0
         self.top_components: List[bpy.types.Object] = []
         self.bottom_components: List[bpy.types.Object] = []
-        self.positions: Dict[str, Matrix] = {}
         self.cameras: List[Camera] = []
         self.backgrounds: List[Background] = []
         self.lights: List[Light] = []
@@ -139,7 +139,7 @@ class Studio:
         # PCB generated using gerber2blend
         if bpy.data.collections.get("Board") and bpy.data.objects.get(config.PCB_name):
             logger.info("PCB type model was recognized.")
-            self._configure_as_PCB(config.PCB_name)
+            self._configure_as_PCB()
             return
 
         # Unknown type model
@@ -152,12 +152,12 @@ class Studio:
             logger.info("Unknown type model was recognized.")
             self._configure_as_unknown()
 
-    def _configure_as_PCB(self, object_name):
+    def _configure_as_PCB(self):
         self.is_pcb = True
-        self.top_parent = bpy.data.objects.get(object_name, "")
+        self.top_parent = bpy.data.objects.get(config.PCB_name, "")
         if not self.top_parent:
             raise RuntimeError(
-                f"{object_name} object could not be found in Blender model data."
+                f"{config.PCB_name} object could not be found in Blender model data."
             )
         self.rendered_obj = self.top_parent
         self.components = cu.select_all(self.top_parent)

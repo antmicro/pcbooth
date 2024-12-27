@@ -1,12 +1,10 @@
 import bpy
 import pcbooth.core.job
 from pcbooth.modules.background import Background
-from pcbooth.modules.camera import Camera
 from pcbooth.modules.renderer import FFmpegWrapper, RendererWrapper
-from pcbooth.modules.custom_utilities import get_top_parent, clear_animation_data
+from pcbooth.modules.custom_utilities import clear_animation_data
 import logging
 from itertools import combinations
-from typing import List, Tuple
 
 logger = logging.getLogger(__name__)
 

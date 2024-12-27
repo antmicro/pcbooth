@@ -33,8 +33,7 @@ class Static(pcbooth.core.job.Job):
 
         for position in self.studio.positions:
             self.studio.change_position(position)
-            object = get_top_parent(self.studio.rendered_obj)
-            Background.update_position(object)
+            Background.update_position(self.studio.top_parent)
             for background in self.studio.backgrounds:
                 Background.use(background)
                 for camera in self.studio.cameras:

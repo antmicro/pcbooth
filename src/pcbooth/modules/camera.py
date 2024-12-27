@@ -8,6 +8,7 @@ from math import radians
 from mathutils import Matrix
 from typing import Tuple, Dict, List, ClassVar, Self, Tuple
 import logging
+from contextlib import contextmanager
 
 logger = logging.getLogger(__name__)
 
@@ -218,3 +219,15 @@ class Camera:
             data_path="rotation_euler", frame=scene.frame_current
         )
         self.object.keyframe_insert(data_path="location", frame=scene.frame_current)
+
+    @contextmanager
+    def dof_override(self):
+        """Temporarily disable depth of field of the camera."""
+        try:
+            self.object.data.dof.use_dof = False
+            yield
+        except AttributeError:
+            pass
+        finally:
+            if config.blendcfg["STUDIO_EFFECTS"]["DEPTH_OF_FIELD"]:
+                self.object.data.dof.use_dof = True

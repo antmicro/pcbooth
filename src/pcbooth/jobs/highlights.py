@@ -52,7 +52,7 @@ class Highlights(pcbooth.core.job.Job):
         )
         self.update_status(total_renders)
         Background.use(self.studio.backgrounds[0])
-        object = cu.get_top_parent(self.studio.rendered_obj)
+        object = self.studio.top_parent
         white_mat = add_material("white", WHITE_RGB)
         highlight_mat = add_material("highlight", HIGHLIGHT_RGB)
 
