@@ -40,21 +40,6 @@ def read_pcb_name_from_prj(path: str, extension: str) -> str:
     return name
 
 
-def read_pcb_name(path: str) -> str:
-    """Read the PCB name from the current EDA project."""
-    extension = config.blendcfg["SETTINGS"]["PRJ_EXTENSION"]
-    if extension != "":
-        try:
-            return read_pcb_name_from_prj(path, extension)
-        except Exception:
-            logger.warning(f"Failed to find {extension} file!")
-        # further logic can be added in a similar way as above
-
-    # default case
-    logger.warning("Using default value for PCB name")
-    return DEFAULT_PCB_NAME
-
-
 def get_data_from_blendfile(
     blendfile: str, data_type: str, filter_func: Callable[[str], bool] = lambda x: True
 ) -> Optional[List[str]]:

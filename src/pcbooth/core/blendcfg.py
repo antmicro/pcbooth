@@ -68,6 +68,17 @@ def get_image_formats() -> List[str]:
 # Schema for blendcfg.yaml file
 CONFIGURATION_SCHEMA = {
     "SETTINGS": {
+        "PRJ_EXTENSION": Field("string"),
+        "FAB_DIR": Field("string"),
+        "RENDER_DIR": Field("string"),
+        "ANIMATION_DIR": Field("string"),
+        "IMAGE_FORMAT": Field("image_format"),
+        "VIDEO_FORMAT": Field("video_format"),
+        "THUMBNAILS": Field("bool"),
+        "KEEP_FRAMES": Field("bool"),
+        "SAVE_SCENE": Field("bool"),
+    },
+    "RENDERER": {
         "SAMPLES": Field("int"),
         "FPS": Field("int"),
         "IMAGE_WIDTH": Field("int"),
@@ -76,26 +87,21 @@ CONFIGURATION_SCHEMA = {
         "VIDEO_HEIGHT": Field("int"),
         "THUMBNAIL_WIDTH": Field("int"),
         "THUMBNAIL_HEIGHT": Field("int"),
-        "KEEP_PNGS": Field("bool"),
-        "THUMBNAILS": Field("bool"),
-        "IMAGE_FORMAT": Field("image_format"),
-        "VIDEO_FORMAT": Field("video_format"),
-        "RENDER_DIR": Field("string"),
-        "ANIMATION_DIR": Field("string"),
-        "FAB_DIR": Field("string"),
-        "PRJ_EXTENSION": Field("string"),
     },
-    "STUDIO_EFFECTS": {
-        "SAVE_SCENE": Field("bool"),
-        "BACKGROUND": Field("list[str]"),
+    "SCENE": {
         "LIGHTS_COLOR": Field("color"),
         "LIGHTS_INTENSITY": Field("float"),
-        "ENVTEXTURE_INTENSITY": Field("float"),
+        "HDRI_INTENSITY": Field("float"),
         "DEPTH_OF_FIELD": Field("bool"),
         "LED_ON": Field("bool"),
+        "ADJUST_POS": Field("bool"),
+        "ORTHO_CAM": Field("bool"),
+        "RENDERED_OBJECT": Field(
+            "data_block", optional=True, conv=parse_data_block_strings
+        ),
     },
+    "BACKGROUNDS": {"LIST": Field("list[str]")},
     "CAMERAS": {
-        "ORTHO_TYPE": Field("bool"),
         "TOP": Field("bool"),
         "ISO": Field("bool"),
         "FRONT": Field("bool"),
@@ -105,19 +111,10 @@ CONFIGURATION_SCHEMA = {
         "PHOTO2": Field("bool"),
         "CUSTOM": Field("bool"),
     },
-    "OBJECT": {
+    "POSITIONS": {
         "TOP": Field("bool"),
         "BOTTOM": Field("bool"),
         "REAR": Field("bool"),
-        "AUTO_ROTATE": Field("bool"),
-        "RENDERED_OBJECT": Field(
-            "data_block", optional=True, conv=parse_data_block_strings
-        ),
-    },
-    "OUTPUT": {
-        "STATIC": Field("bool"),
-        "STACKUP": Field("bool"),
-        "KEYFRAMES": Field("bool"),
     },
 }
 

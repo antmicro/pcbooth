@@ -30,8 +30,8 @@ def load_hdri() -> None:
     hdri.image = bpy.data.images.load(config.env_texture_path)
 
     background = nodes.new(type="ShaderNodeBackground")
-    background.inputs["Strength"].default_value = config.blendcfg["STUDIO_EFFECTS"][
-        "ENVTEXTURE_INTENSITY"
+    background.inputs["Strength"].default_value = config.blendcfg["SCENE"][
+        "HDRI_INTENSITY"
     ]
 
     output = nodes.new(type="ShaderNodeOutputWorld")
@@ -174,12 +174,10 @@ class Light:
         light_name = "light_" + name.lower()
         light = bpy.data.lights.new(light_name, type="AREA")
         light.spread = radians(140)
-        light.color = cu.hex_to_rgb(config.blendcfg["STUDIO_EFFECTS"]["LIGHTS_COLOR"])
+        light.color = cu.hex_to_rgb(config.blendcfg["SCENE"]["LIGHTS_COLOR"])
         light.shape = "RECTANGLE"
 
-        config_intensity = (
-            config.blendcfg["STUDIO_EFFECTS"]["LIGHTS_INTENSITY"] * intensity
-        )
+        config_intensity = config.blendcfg["SCENE"]["LIGHTS_INTENSITY"] * intensity
         light.energy = calculate_light_intensity(
             config_intensity, Light.obj_x, Light.obj_y
         )

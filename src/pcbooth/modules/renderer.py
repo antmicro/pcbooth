@@ -175,8 +175,8 @@ def init_render_settings():
     scene = bpy.context.scene
     renderer = bpy.context.scene.render
 
-    renderer.resolution_x = int(config.blendcfg["SETTINGS"]["IMAGE_WIDTH"])
-    renderer.resolution_y = int(config.blendcfg["SETTINGS"]["IMAGE_HEIGHT"])
+    renderer.resolution_x = int(config.blendcfg["RENDERER"]["IMAGE_WIDTH"])
+    renderer.resolution_y = int(config.blendcfg["RENDERER"]["IMAGE_HEIGHT"])
 
     renderer.engine = "CYCLES"
     renderer.film_transparent = True
@@ -184,8 +184,8 @@ def init_render_settings():
     renderer.use_persistent_data = True  # more memory used, faster renders
 
     scene.frame_start = 1
-    scene.frame_end = int(config.blendcfg["SETTINGS"]["FPS"])
-    scene.cycles.samples = config.blendcfg["SETTINGS"]["SAMPLES"]
+    scene.frame_end = int(config.blendcfg["RENDERER"]["FPS"])
+    scene.cycles.samples = config.blendcfg["RENDERER"]["SAMPLES"]
     scene.cycles.use_denoising = True
 
     setup_gpu()
@@ -199,8 +199,8 @@ class RendererWrapper:
         self.img_ext = None
         self.cache = None
         self.cache_path = None
-        self.tmb_x = config.blendcfg["SETTINGS"]["THUMBNAIL_WIDTH"]
-        self.tmb_y = config.blendcfg["SETTINGS"]["THUMBNAIL_HEIGHT"]
+        self.tmb_x = config.blendcfg["RENDERER"]["THUMBNAIL_WIDTH"]
+        self.tmb_y = config.blendcfg["RENDERER"]["THUMBNAIL_HEIGHT"]
         self.render_path = config.renders_path
 
     def _set_image_format(self, format: str) -> None:
@@ -316,7 +316,7 @@ class RendererWrapper:
         Remove render cache file. Looks for CACHE_NAME files. Sets cache attribute to None.
         """
         logger.debug("Removing cached render.")
-        if not config.blendcfg["SETTINGS"]["KEEP_PNGS"]:
+        if not config.blendcfg["SETTINGS"]["KEEP_FRAMES"]:
             remove_file(self.cache_path)
         self.cache = None
 
@@ -355,11 +355,11 @@ class FFmpegWrapper:
         self.format = None
         self.vid_ext = None
         self.img_ext = bpy.context.scene.render.file_extension
-        self.res_x = config.blendcfg["SETTINGS"]["VIDEO_WIDTH"]
-        self.res_y = config.blendcfg["SETTINGS"]["VIDEO_HEIGHT"]
-        self.tmb_x = config.blendcfg["SETTINGS"]["THUMBNAIL_WIDTH"]
-        self.tmb_y = config.blendcfg["SETTINGS"]["THUMBNAIL_HEIGHT"]
-        self.fps = config.blendcfg["SETTINGS"]["FPS"]
+        self.res_x = config.blendcfg["RENDERER"]["VIDEO_WIDTH"]
+        self.res_y = config.blendcfg["RENDERER"]["VIDEO_HEIGHT"]
+        self.tmb_x = config.blendcfg["RENDERER"]["THUMBNAIL_WIDTH"]
+        self.tmb_y = config.blendcfg["RENDERER"]["THUMBNAIL_HEIGHT"]
+        self.fps = config.blendcfg["RENDERER"]["FPS"]
         self.animation_path = config.animations_path
         self.render_path = config.renders_path
 
@@ -383,7 +383,9 @@ class FFmpegWrapper:
         """Reverse existing video file."""
         for format in self.formats:
             self._set_video_format(format)
+            decoder = FFmpegWrapper.FORMAT_ARGUMENTS[self.format]
             input_dict = {
+                **({"-c:v": decoder} if decoder else {}),
                 "-i": f"{self.animation_path}{input_file}{self.vid_ext}",
                 "-vf": "reverse",
             }
@@ -393,7 +395,9 @@ class FFmpegWrapper:
         """Scale existing video file down into thumbnail."""
         for format in self.formats:
             self._set_video_format(format)
+            decoder = FFmpegWrapper.FORMAT_ARGUMENTS[self.format]
             input_dict = {
+                **({"-c:v": decoder} if decoder else {}),
                 "-i": f"{self.animation_path}{input_file}{self.vid_ext}",
                 "-vf": f"scale={self.tmb_x}:{self.tmb_y}",
             }
@@ -434,7 +438,7 @@ class FFmpegWrapper:
         """
         logger.debug("Removing frames.")
         pattern = r"^.+_\d{4}..+$"
-        if config.blendcfg["SETTINGS"]["KEEP_PNGS"]:
+        if config.blendcfg["SETTINGS"]["KEEP_FRAMES"]:
             return
         for file in listdir(self.render_path):
             if match(pattern, file):

@@ -13,6 +13,7 @@ import pcbooth.modules.config as config
 import pcbooth.modules.custom_utilities as cu
 from pcbooth.modules.camera import Camera
 from pcbooth.modules.background import Background
+from pcbooth.modules.bounding_box import Bounds
 from pcbooth.modules.light import Light, disable_emission_nodes
 from pcbooth.modules.renderer import init_render_settings, set_default_compositing
 
@@ -54,16 +55,16 @@ class Studio:
         self._add_backgrounds()
         self._apply_effects()
 
+        if config.blendcfg["SETTINGS"]["SAVE_SCENE"]:
+            blend_scene_path = config.pcb_blend_path.replace(".blend", "_scene.blend")
+            cu.save_pcb_blend(blend_scene_path)
+
     def _add_cameras(self):
         Camera.add_collection()
 
-        cameras = get_keys(config.blendcfg["CAMERAS"], skipped=["ORTHO_TYPE", "CUSTOM"])
-        positions = get_keys(
-            config.blendcfg["OBJECT"], skipped=["AUTO_ROTATE", "RENDERED_OBJECT"]
-        )
-
-        for camera_name in cameras:
+        for camera_name, _ in Camera.presets.items():
             Camera(camera_name, Camera.presets[camera_name])
+
         if config.blendcfg["CAMERAS"]["CUSTOM"]:
             if camera_custom := bpy.data.objects.get("camera_custom"):
                 Camera(camera=camera_custom)
@@ -71,32 +72,37 @@ class Studio:
                 logger.warning(
                     f"[CAMERAS][CUSTOM] enabled but no 'camera_custom' predefined object found in Blender file."
                 )
-
-        for camera in Camera.objects:
-            for position in positions:
-                self.change_position(position)
-                camera.align(self.rendered_obj)
-                camera.save_position(position)
-                camera.save_focus(position)
+        for position, _ in Studio.presets.items():
+            self.change_position(position)
+            with Bounds(cu.select_all(self.rendered_obj)) as bounds:
+                for camera in Camera.objects:
+                    camera.align(self.rendered_obj, bounds)
+                    camera.save_position(position)
+                    camera.save_focus(position)
 
         logger.info(
             f"Added {len(Camera.objects)} cameras to Studio: {[cam.object.name for cam in Camera.objects]}"
         )
-        self.cameras = Camera.objects
-        self.positions = positions
+
+        cfg_cameras = [key for key, val in config.blendcfg["CAMERAS"].items() if val]
+        cfg_pos = [key for key, val in config.blendcfg["POSITIONS"].items() if val]
+        self.cameras = [cam for cam in Camera.objects if cam.name in cfg_cameras]
+        self.positions = [pos for pos in Studio.presets if pos in cfg_pos]
         self.change_position("TOP")
 
     def _add_backgrounds(self):
         Background.add_collection()
 
-        for bg_name in config.blendcfg["STUDIO_EFFECTS"]["BACKGROUND"]:
+        for bg_name in Background.files:
             Background(bg_name)
 
         Background.update_position(self.top_parent)
         logger.info(
             f"Added {len(Background.objects)} backgrounds to Studio: {[bg.object.name for bg in Background.objects]}"
         )
-        self.backgrounds = Background.objects
+
+        cfg_bgs = config.blendcfg["BACKGROUNDS"]["LIST"]
+        self.backgrounds = [bg for bg in Background.objects if bg.name in cfg_bgs]
 
     def _add_lights(self):
         Light.add_collection()
@@ -112,7 +118,7 @@ class Studio:
 
     def _apply_effects(self):
         """Enable or disable additional studio effects"""
-        if not config.blendcfg["STUDIO_EFFECTS"]["LED_ON"]:
+        if not config.blendcfg["SCENE"]["LED_ON"]:
             disable_emission_nodes()
 
     def _configure_model_data(self):
@@ -120,9 +126,9 @@ class Studio:
         logger.info("Configuring studio...")
 
         obj_type, rendered_obj_name = "", ""
-        if config.blendcfg["OBJECT"]["RENDERED_OBJECT"]:
-            obj_type = config.blendcfg["OBJECT"]["RENDERED_OBJECT"][0]
-            rendered_obj_name = config.blendcfg["OBJECT"]["RENDERED_OBJECT"][1]
+        if config.blendcfg["SCENE"]["RENDERED_OBJECT"]:
+            obj_type = config.blendcfg["SCENE"]["RENDERED_OBJECT"][0]
+            rendered_obj_name = config.blendcfg["SCENE"]["RENDERED_OBJECT"][1]
 
         # single object picked using RENDERED_OBJECT setting
         if obj_type == "Object":
@@ -203,7 +209,7 @@ class Studio:
         """
         object = cu.get_top_parent(self.rendered_obj)
 
-        if config.blendcfg["OBJECT"]["AUTO_ROTATE"]:
+        if config.blendcfg["SCENE"]["ADJUST_POS"]:
             if self.is_pcb:
                 cu.rotate_horizontally(object)
 
@@ -249,8 +255,3 @@ class Studio:
         object.rotation_euler = self.presets[key]
         logger.debug(f"Moved {self.rendered_obj.name} to '{key}' position")
         cu.update_depsgraph()
-
-
-def get_keys(cfg: Dict[str, bool], skipped: List[str]) -> List[str]:
-    """Retrieve keys from a dictionary that have a `True` value and are not in a specified list of skipped keys."""
-    return [key for key, value in cfg.items() if value and key not in skipped]

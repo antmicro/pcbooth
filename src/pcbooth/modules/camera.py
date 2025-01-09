@@ -55,8 +55,8 @@ class Camera:
 
         self.positions: Dict[str, Matrix] = {}
         self.focuses: Dict[str, Tuple[float, float]] = {}
-        self.object: bpy.types.Object = self._add(name, rotation, camera)
         self.name = name
+        self.object: bpy.types.Object = self._add(name, rotation, camera)
         self._set_defaults()
 
     def _add(
@@ -69,6 +69,7 @@ class Camera:
         if camera:
             # in case camera is already predefined in .blend is to be added as Camera (custom camera handling)
             object = camera
+            self.name = "CUSTOM"
         else:
             camera_name = "camera_" + name.lower()
             camera = bpy.data.cameras.new(camera_name)
@@ -83,12 +84,10 @@ class Camera:
     def _set_defaults(self) -> None:
         """Set default camera properties"""
         self.object.data.type = "PERSP"
-        self.object.data.lens = (
-            2000 if config.blendcfg["CAMERAS"]["ORTHO_TYPE"] else 105
-        )
+        self.object.data.lens = 2000 if config.blendcfg["SCENE"]["ORTHO_CAM"] else 105
         self.object.data.clip_start = 0.1
         self.object.data.clip_end = 15000  # set long clip end for renders
-        if config.blendcfg["STUDIO_EFFECTS"]["DEPTH_OF_FIELD"]:
+        if config.blendcfg["SCENE"]["DEPTH_OF_FIELD"]:
             self.object.data.dof.use_dof = True
 
     def save_position(self, key: str):
@@ -150,41 +149,37 @@ class Camera:
 
         logger.debug(f"frame_selected function used for {self.object.name}")
 
-    def set_focus(
-        self,
-        object: bpy.types.Object,
-        focal_ratio: float = 0.0625,
-    ):
+    def set_focus(self, target: Bounds, focal_ratio: float = 0.0625):
         """
         Calculate focus distance based on the distance between camera and rendered object.
         Apply focal ratio.
         TBD: add focal_ratio to blendcfg?
         """
-        with Bounds(cu.select_all(object)) as target:
-            cu.set_origin(target.bounds)
-            self.object.data.dof.focus_distance = abs(
-                (target.bounds.location - self.object.location).length
-            )
-            self.object.data.dof.aperture_fstop = focal_ratio
+        cu.set_origin(target.bounds)
+        self.object.data.dof.focus_distance = abs(
+            (target.bounds.location - self.object.location).length
+        )
+        self.object.data.dof.aperture_fstop = focal_ratio
         logger.debug(f"set_focus function used for {self.object.name}")
 
-    def align(self, object: bpy.types.Object, **kwargs):
+    def align(self, rendered_obj: bpy.types.Object, target: Bounds, **kwargs):
         """
         Align camera to all rendered objects and then recalculate focus distance.
         Args:
             rendered_obj: bpy.types.Object
+            target: Bounds
             focal_ratio: float = 0.0625
             zoom: float = 1.05
         """
         set_focus_args = {
-            key: kwargs[key] for key in ["rendered_obj", "focal_ratio"] if key in kwargs
+            key: kwargs[key] for key in ["target", "focal_ratio"] if key in kwargs
         }
         frame_selected_args = {
             key: kwargs[key] for key in ["rendered_obj", "zoom"] if key in kwargs
         }
 
-        self.frame_selected(object, **frame_selected_args)
-        self.set_focus(object, **set_focus_args)
+        self.frame_selected(rendered_obj, **frame_selected_args)
+        self.set_focus(target, **set_focus_args)
 
     def add_keyframe(self, frame, translations: bool = True, focus: bool = True):
         """
@@ -229,5 +224,5 @@ class Camera:
         except AttributeError:
             pass
         finally:
-            if config.blendcfg["STUDIO_EFFECTS"]["DEPTH_OF_FIELD"]:
+            if config.blendcfg["SCENE"]["DEPTH_OF_FIELD"]:
                 self.object.data.dof.use_dof = True

@@ -3,7 +3,7 @@ import pcbooth.core.job
 from pcbooth.modules.background import Background
 from pcbooth.modules.renderer import RendererWrapper
 import pcbooth.modules.custom_utilities as cu
-from contextlib import contextmanager
+import pcbooth.modules.job_utilities as ju
 import logging
 
 from typing import List, Tuple, Dict, Any
@@ -56,10 +56,12 @@ class Highlights(pcbooth.core.job.Job):
         white_mat = add_material("white", WHITE_RGB)
         highlight_mat = add_material("highlight", HIGHLIGHT_RGB)
 
-        with hide_override(hidden), material_override(white_mat, bpy.data.objects):
+        with ju.hide_override(hidden), ju.material_override(
+            white_mat, bpy.data.objects
+        ):
             for camera in self.studio.cameras:
                 for component in highlighted:
-                    with material_override(highlight_mat, [component]):
+                    with ju.material_override(highlight_mat, [component]):
                         if component in self.studio.top_components:
                             self.render_side("TOP", component, object, camera, renderer)
 
@@ -99,6 +101,8 @@ class Highlights(pcbooth.core.job.Job):
             for component in rendered
             if is_hidden(component, self.studio.is_pcb)
         ] + linked
+        if not highlighted:
+            logger.warning("No highlighted components found!")
         return highlighted, hidden
 
     def get_name(self, object, position, camera) -> str:
@@ -109,51 +113,6 @@ class Highlights(pcbooth.core.job.Job):
             designator = cu.get_designator(object)
             return f"{prefix}{designator}{suffix}"
         return f"{prefix}{object.name}{suffix}{position[0]}"
-
-
-@contextmanager
-def material_override(
-    base_material: bpy.types.Material,
-    components: List[bpy.types.Object],
-):
-    """
-    Override all materials with the specified one for all components in the list.
-    Skips linked objects. Generates backup dictionary with the material slots for revert.
-    """
-    try:
-        backup = {}
-        for component in components:
-            backup[component] = [slot.material for slot in component.material_slots]
-        for component in backup.keys():
-            set_material(component, base_material)
-            if component.library:
-                continue
-            for slot in component.material_slots:
-                slot.material = base_material
-        yield
-    except AttributeError:
-        pass
-    finally:
-        """Revert material data from backup dictionary."""
-        for component, materials in backup.items():
-            if component.library:
-                continue
-            for i in range(len(materials)):
-                component.material_slots[i].material = materials[i]
-
-
-@contextmanager
-def hide_override(components: List[bpy.types.Object]):
-    """Apply hide from render override for components from provided list."""
-    try:
-        for component in components:
-            component.hide_render = True
-        yield
-    except AttributeError:
-        pass
-    finally:
-        for component in components:
-            component.hide_render = False
 
 
 def is_highlighted(object: bpy.types.Object, is_pcb: bool = True) -> bool:

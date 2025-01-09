@@ -8,6 +8,7 @@ import pcbooth.modules.config as config
 import pcbooth.modules.file_io as fio
 import pcbooth.modules.custom_utilities as cu
 from pcbooth.modules.bounding_box import Bounds
+from pathlib import Path
 
 
 logger = logging.getLogger(__name__)
@@ -16,6 +17,7 @@ logger = logging.getLogger(__name__)
 class Background:
     objects: ClassVar[List["Background"]] = []
     collection: bpy.types.Collection = None
+    files: List[str] = []
 
     @classmethod
     def add_collection(cls):
@@ -23,6 +25,11 @@ class Background:
         studio = cu.get_collection("Studio")
         collection = cu.get_collection("Backgrounds", studio)
         cls.collection = collection
+        cls.files = [
+            file.stem
+            for file in Path(config.backgrounds_path).iterdir()
+            if file.suffix == ".blend"
+        ] + ["transparent"]
 
     @classmethod
     def get(cls, name: str) -> Self | None:
@@ -49,7 +56,7 @@ class Background:
         background.object.hide_render = False
         logger.debug(f"Enabling '{background.object.name}' background for render.")
 
-    def __init__(self, name: str = ""):
+    def __init__(self, name: str = "") -> None:
         if not Background.collection:
             raise ValueError(
                 f"Backgrounds collection is not added, call add_collection class method before creating an instance."

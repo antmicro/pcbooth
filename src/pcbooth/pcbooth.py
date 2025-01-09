@@ -105,7 +105,9 @@ def create_modules(config: list[dict[Any, Any]]) -> list[pcbooth.core.job.Job]:
     import_python_submodules()
 
     runnable_modules = []
-
+    if not config:
+        logger.error(f"No rendering jobs specified in OUTPUTS")
+        sys.exit(1)
     logger.debug("Execution plan:")
     for v in config:
         name = next(iter(v))
@@ -154,11 +156,10 @@ def main():
 
         config.init_global(args)
         studio = Studio(config.pcb_blend_path)
-        cu.save_pcb_blend("test.blend")
         run_modules_for_config(config.blendcfg, studio)
 
-    except Exception:
-        print(traceback.format_exc())
+    except Exception as e:
+        logger.error("%s", str(e), exc_info=True)
         sys.exit(1)
 
 

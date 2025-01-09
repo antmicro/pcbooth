@@ -26,7 +26,8 @@ class Job(ABC):
         Errors during execution can be returned by raising an exception.
         """
         self._setup(studio)
-        self.iterate()
+        if not self.report():
+            self.iterate()
         clear_animation_data()
 
     def _setup(self, studio: Studio) -> None:
@@ -36,7 +37,6 @@ class Job(ABC):
         self._iter = 0
         self.studio = copy(studio)
         self._override_studio()
-        self.report()
 
     def _override_studio(self):
         """
@@ -69,13 +69,24 @@ class Job(ABC):
         percent = self._iter / self._total * 100
         logger.info(f"### Progress: {self._iter}/{self._total} ({int(percent)}%)")
 
-    def report(self) -> None:
+    def report(self) -> int:
         """Print job name and enabled Studio items to be used in the job."""
         logger.info(f"### {type(self).__name__.upper()} rendering job")
-        logger.info(f"\t* enabled rendered object positions: {self.studio.positions}")
-        logger.info(
-            f"\t* enabled cameras: {[camera.name for camera in self.studio.cameras]}"
-        )
-        logger.info(
-            f"\t* enabled backgrounds: {[bg.name for bg in self.studio.backgrounds]}"
-        )
+
+        items = {
+            "rendered object positions": self.studio.positions,
+            "cameras": ([camera.name for camera in self.studio.cameras]),
+            "backgrounds": ([bg.name for bg in self.studio.backgrounds]),
+        }
+
+        for item, value in items.items():
+            if value:
+                logger.info(f"\t* enabled {item}: {value}")
+            else:
+                logger.warning(f"\t* no enabled {item}!")
+
+        if not all(items.values()):
+            logger.warning("Nothing to render within this job.")
+            return 1
+
+        return 0

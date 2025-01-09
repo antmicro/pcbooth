@@ -1,39 +1,45 @@
 default: &default
   SETTINGS:
-    SAMPLES: 32                     # quality of final render, influences rendering speed
-    FPS: 25                         # animations FPS; value lower than 5 may result in blurred results
-    IMAGE_WIDTH: 1920
-    IMAGE_HEIGHT: 1920
-    VIDEO_WIDTH: 740
-    VIDEO_HEIGHT: 740
-    THUMBNAIL_WIDTH: 320
-    THUMBNAIL_HEIGHT: 320
-    KEEP_PNGS: False
-    THUMBNAILS: True                # enables thumbnails for eligible outputs
-    IMAGE_FORMAT: 
+    PRJ_EXTENSION: .kicad_pro         # default extension of project based on which kbe generates name of .blend
+    FAB_DIR: fab                      # default directory name containing fabrication files
+    RENDER_DIR: blender_renders       # default directory name for storing renders
+    ANIMATION_DIR: assets/previews    # default directory name for storing sequenced animations
+    IMAGE_FORMAT:                     # list of formats for static image outputs (all supported by Blender)
       - PNG
       - JPEG
-    VIDEO_FORMAT: 
+    VIDEO_FORMAT:                     # list of formats for static image outputs (GIF, AVI, WEBM, MP4, MPEG)
       - WEBM
       - GIF
-    RENDER_DIR: blender_renders     # default directory name for storing renders
-    ANIMATION_DIR: assets/previews     # default directory name for storing renders
-    FAB_DIR: fab                    # default directory name containing fabrication files
-    PRJ_EXTENSION: .kicad_pro   # default extension of project based on which kbe generates name of .blend
+    THUMBNAILS: True                  # enables thumbnails for eligible outputs
+    KEEP_FRAMES: False                # if True, keeps frame images after sequencing to animation 
+    SAVE_SCENE: False                 # saves *_scene.blend file with entire scene setup included
 
-  STUDIO_EFFECTS:
-    SAVE_SCENE: False               # saves *_scene.blend file with entire studio and camera setup included
-    BACKGROUND: 
-      - paper_black         # name of .blend file from 'antmicro-blender-models/lib/backgrounds' containing background
-      - transparent                              # use Transparent to render w/o background; can be multiple values separated by comma
-    LIGHTS_COLOR: FFFFFF
-    LIGHTS_INTENSITY: 1.0
-    ENVTEXTURE_INTENSITY: 0.5
-    DEPTH_OF_FIELD: True
-    LED_ON: False
+  RENDERER:
+    SAMPLES: 32                       # Cycles renderer samples, influence quality of final render and rendering times
+    FPS: 25                           # animation frames per second value 
+    IMAGE_WIDTH: 1920                 # rendered image width
+    IMAGE_HEIGHT: 1920                # rendered image height
+    VIDEO_WIDTH: 740                  # sequenced animation width
+    VIDEO_HEIGHT: 740                 # sequenced animation height
+    THUMBNAIL_WIDTH: 320              # thumbnail image copy width
+    THUMBNAIL_HEIGHT: 320             # thumbnail image copy height
 
-  CAMERAS:
-    ORTHO_TYPE: False               # enables orthographic cameras
+  SCENE:
+    LIGHTS_COLOR: FFFFFF              # area lights color (accepts hex values, for example AABBCC) 
+    LIGHTS_INTENSITY: 1.0             # area lights intensity float multiplier, set to 0.0 to disable area lights
+    HDRI_INTENSITY: 0.5               # HDRI background intensity float multiplier, set to 0.0 to disable HDRI 
+    DEPTH_OF_FIELD: True              # enable depth of field for all cameras
+    LED_ON: False                     # enable light emitting shaders on model
+    ADJUST_POS: True                  # enable automatic position adjustments based on model type before rendering
+    ORTHO_CAM: False                  # enables orthographic-like camera mode for all cameras
+    RENDERED_OBJECT:                  # specify part of the model to be used as render object, uses "Object/<name>" or "Collection/<name>" syntax
+
+  BACKGROUNDS:                        # background selection
+    LIST:                             # name of .blend file from src/pcbooth/templates/backgrounds directory or "transparent"
+      - paper_black                     
+      - transparent                              
+
+  CAMERAS:                            # camera selection
     TOP: False
     ISO: False
     FRONT: False
@@ -43,14 +49,12 @@ default: &default
     PHOTO2: False
     CUSTOM: False
 
-  OBJECT:
+  POSITIONS:                          # model position selection
     TOP: True
     BOTTOM: True
     REAR: False
-    AUTO_ROTATE: True
-    RENDERED_OBJECT: 
 
-  OUTPUTS:
+  OUTPUTS:                            # rendering jobs list
     - STATIC:
     - FLIPTRANSITION:
 

@@ -81,7 +81,7 @@ def configure_paths(arguments: argparse.Namespace) -> None:
             raise RuntimeError(
                 f"There is no {blendcfg['SETTINGS']['FAB_DIR']}/ directory in the current working directory! ({prj_path})"
             )
-        PCB_name = fio.read_pcb_name(prj_path, project_extension)
+        PCB_name = fio.read_pcb_name_from_prj(prj_path, project_extension)
         pcb_blend_path = fab_path + PCB_name + ".blend"
     else:
         PCB_name = arguments.blend_path.split("/")[-1].replace(".blend", "")

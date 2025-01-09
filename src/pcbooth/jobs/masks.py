@@ -4,13 +4,12 @@ from pcbooth.modules.renderer import (
     RendererWrapper,
     set_lqbw_compositing,
     setup_ultralow_cycles,
-    restore_default_cycles,
-    set_default_compositing,
 )
+import pcbooth.modules.job_utilities as ju
 import pcbooth.modules.custom_utilities as cu
 import logging
-from typing import List, Tuple, Callable
-from contextlib import contextmanager
+from typing import List, Tuple
+
 
 logger = logging.getLogger(__name__)
 
@@ -48,14 +47,14 @@ class Masks(pcbooth.core.job.Job):
         self.update_status(total_renders)
 
         with (
-            cycles_override(setup_ultralow_cycles),
-            compositing_override(set_lqbw_compositing),
-            material_override(),
+            ju.cycles_override(setup_ultralow_cycles),
+            ju.compositing_override(set_lqbw_compositing),
+            ju.global_material_override(),
         ):
             for camera in self.studio.cameras:
                 with camera.dof_override():
                     for component in highlighted:
-                        with holdout_override([component], unobstructed=True):
+                        with ju.holdout_override([component], unobstructed=True):
                             if component in self.studio.top_components:
                                 self.render_side("TOP", component, camera, renderer)
 
@@ -85,6 +84,8 @@ class Masks(pcbooth.core.job.Job):
             for component in rendered
             if is_highlighted(component, self.studio.is_pcb)
         ]
+        if not highlighted:
+            logger.warning("No highlighted components found!")
         return highlighted
 
     def get_name(self, object, position, camera) -> str:
@@ -106,63 +107,3 @@ def is_highlighted(object: bpy.types.Object, is_pcb: bool = True) -> bool:
         return True
     designator = cu.get_designator(object)
     return any(designator.startswith(des) for des in HIGHLIGHTED)
-
-
-@contextmanager
-def holdout_override(components: List[bpy.types.Object], unobstructed: bool = False):
-    """Apply holdout override for components from provided list. If non_obstructed"""
-    try:
-        if unobstructed:
-            for component in bpy.data.objects:
-                component.hide_render = True
-        for component in components:
-            component.is_holdout = True
-            component.hide_render = False
-        yield
-    except AttributeError:
-        pass
-    finally:
-        for component in bpy.data.objects:
-            component.hide_render = False
-        for component in components:
-            component.is_holdout = False
-
-
-@contextmanager
-def material_override():
-    """Apply global material override for all objects in a scene."""
-    try:
-        if override_material := bpy.data.materials.get("_override"):
-            pass
-        else:
-            override_material = bpy.data.materials.new("_override")
-        bpy.context.view_layer.material_override = override_material
-        yield
-    except (AttributeError, RuntimeError):
-        pass
-    finally:
-        bpy.context.view_layer.material_override = None
-
-
-@contextmanager
-def compositing_override(compositing_func: Callable):
-    """Apply compositor override."""
-    try:
-        compositing_func()
-        yield
-    except (AttributeError, RuntimeError):
-        pass
-    finally:
-        set_default_compositing()
-
-
-@contextmanager
-def cycles_override(settings_func: Callable):
-    """Apply Cycles settings override."""
-    try:
-        settings_func()
-        yield
-    except (AttributeError, RuntimeError):
-        pass
-    finally:
-        restore_default_cycles()
