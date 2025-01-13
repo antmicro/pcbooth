@@ -1,6 +1,7 @@
 import bpy
 import pcbooth.core.job
 from pcbooth.modules.background import Background
+from pcbooth.modules.camera import Camera
 from pcbooth.modules.renderer import FFmpegWrapper, RendererWrapper
 from pcbooth.modules.custom_utilities import clear_animation_data
 import logging
@@ -22,8 +23,9 @@ class CameraTransition(pcbooth.core.job.Job):
     e.g. rightT_leftT.webp, for each combination.
     """
 
-    def _override_studio(self):
-        self.studio.backgrounds = [Background.get("transparent")]
+    def _override_studio(self) -> None:
+        if background := Background.get("transparent"):
+            self.studio.backgrounds = [background]
 
     def iterate(self) -> None:
         """
@@ -54,7 +56,9 @@ class CameraTransition(pcbooth.core.job.Job):
                 clear_animation_data()
         ffmpeg.clear_frames()
 
-    def create_keyframes(self, camera_start, camera_end, position):
+    def create_keyframes(
+        self, camera_start: Camera, camera_end: Camera, position: str
+    ) -> None:
         scene = bpy.context.scene
 
         # create start camera + focus keyframes
@@ -62,8 +66,8 @@ class CameraTransition(pcbooth.core.job.Job):
 
         # override camera_start with camera_end's data
         camera_start.object.matrix_world = camera_end.object.matrix_world.copy()
-        camera_start.object.data.dof.focus_distance = camera_end.focuses[position][0]
-        camera_start.object.data.dof.aperture_fstop = camera_end.focuses[position][1]
+        camera_start.object.data.dof.focus_distance = camera_end.focuses[position][0]  # type: ignore
+        camera_start.object.data.dof.aperture_fstop = camera_end.focuses[position][1]  # type: ignore
 
         # create end camera + focus keyframes
         camera_start.add_keyframe(scene.frame_end)

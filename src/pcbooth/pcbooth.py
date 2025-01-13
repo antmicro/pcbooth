@@ -143,7 +143,7 @@ def run_modules_for_config(conf: dict[Any, Any], studio: Studio) -> None:
         logger.debug("Finished running: %s", job)
 
 
-def main():
+def main() -> int:
     try:
         args = parse_args()
         log.set_logging(args.debug)
@@ -157,11 +157,12 @@ def main():
         config.init_global(args)
         studio = Studio(config.pcb_blend_path)
         run_modules_for_config(config.blendcfg, studio)
+        return 0
 
     except Exception as e:
         logger.error("%s", str(e), exc_info=True)
-        sys.exit(1)
+        return 1
 
 
 if __name__ == "__main__":
-    main()
+    exit(main())

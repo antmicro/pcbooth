@@ -4,7 +4,7 @@ import bpy
 from mathutils import Matrix
 from math import radians
 import logging
-from typing import List
+from typing import List, Optional
 import re
 
 logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ def center_on_scene(object: bpy.types.Object) -> None:
     object.select_set(True)
     bpy.context.view_layer.objects.active = object
     bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY", center="BOUNDS")
-    object.location[:] = [0, 0, 0]
+    object.location = (0.0, 0.0, 0.0)
     bpy.ops.object.select_all(action="DESELECT")
     apply_all_transforms(object)
 
@@ -75,12 +75,12 @@ def apply_display_rot(object: bpy.types.Object, display_rot: int) -> None:
     apply_all_transforms(object)
 
 
-def update_depsgraph():
+def update_depsgraph() -> None:
     """Update Blender dependency graph tree. Needed to refresh translation matrix of an object."""
-    bpy.context.view_layer.update()
+    bpy.context.view_layer.update()  # type: ignore
 
 
-def select_all(parent_obj: bpy.types.Object) -> None:
+def select_all(parent_obj: bpy.types.Object) -> List[bpy.types.Object]:
     """Select parent object and all children recursively"""
     bpy.context.view_layer.objects.active = parent_obj
     bpy.ops.object.select_all(action="DESELECT")
@@ -139,7 +139,7 @@ def link_obj_to_collection(
 
 
 def get_collection(
-    name: str, parent: bpy.types.Collection = None
+    name: str, parent: Optional[bpy.types.Collection] = None
 ) -> bpy.types.Collection:
     """Get collection with provided name, create it if necessary"""
 
@@ -163,7 +163,9 @@ def hex_to_rgb(hex_number: str) -> tuple[float, ...]:
     return tuple(rgb)
 
 
-def add_empty(name: str, target_coll: bpy.types.Collection = None) -> bpy.types.Object:
+def add_empty(
+    name: str, target_coll: Optional[bpy.types.Collection] = None
+) -> bpy.types.Object:
     """
     Add empty object to the scene. If no target collection is specified, link to root scene collection.
     """
@@ -175,14 +177,14 @@ def add_empty(name: str, target_coll: bpy.types.Collection = None) -> bpy.types.
     return object
 
 
-def set_origin(object: bpy.types.Object):
+def set_origin(object: bpy.types.Object) -> None:
     object.select_set(True)
     bpy.context.view_layer.objects.active = object
     bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY", center="BOUNDS")
     bpy.ops.object.select_all(action="DESELECT")
 
 
-def clear_animation_data():
+def clear_animation_data() -> None:
     """
     Remove any animation data if it was added by the job.
     TODO: for now this will remove all existing actions, so there needs to be some way
@@ -210,4 +212,7 @@ def get_designator(object: bpy.types.Object) -> str:
     Expects <DES><idx>:<component value> string as object name.
     """
     regexp = r"^([A-Z]+\d+)\:*"
-    return re.search(regexp, object.name).group(1)
+    result = re.search(regexp, object.name)
+    if result:
+        return result.group(1)
+    return ""

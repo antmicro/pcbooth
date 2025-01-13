@@ -6,7 +6,7 @@ from pcbooth.modules.bounding_box import Bounds
 import pcbooth.modules.config as config
 from math import radians
 from mathutils import Matrix
-from typing import Tuple, Dict, List, ClassVar, Self, Tuple
+from typing import Generator, Tuple, Dict, List, ClassVar, Any, Tuple, Optional
 import logging
 from contextlib import contextmanager
 
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class Camera:
     objects: ClassVar[List["Camera"]] = []
-    collection: bpy.types.Collection = None
+    collection: bpy.types.Collection
 
     presets = {
         "TOP": (radians(0), radians(0), radians(0)),
@@ -28,26 +28,27 @@ class Camera:
     }
 
     @classmethod
-    def add_collection(cls):
+    def add_collection(cls) -> None:
         """Create new Cameras collection"""
         studio = cu.get_collection("Studio")
         collection = cu.get_collection("Cameras", studio)
         cls.collection = collection
 
     @classmethod
-    def get(cls, name: str) -> Self | None:
+    def get(cls, name: str) -> Optional["Camera"]:
         """Get Camera object by name string."""
         for object in cls.objects:
             if object.name == name:
                 return object
+        logger.warning(f"Camera: {name} not found.")
         return None
 
     def __init__(
         self,
         name: str = "",
         rotation: Tuple[float, float, float] = (0.0, 0.0, 0.0),
-        camera: bpy.types.Object = None,
-    ):
+        camera: Optional[bpy.types.Object] = None,
+    ) -> None:
         if not Camera.collection:
             raise ValueError(
                 f"Camera collection is not added, call add_collection class method before creating an instance."
@@ -63,7 +64,7 @@ class Camera:
         self,
         name: str = "",
         rotation: Tuple[float, float, float] = (0.0, 0.0, 0.0),
-        camera: bpy.types.Object = None,
+        camera: Optional[bpy.types.Object] = None,
     ) -> bpy.types.Object:
         """Add and/or create camera from either existing object or using specified name and rotation"""
         if camera:
@@ -72,8 +73,8 @@ class Camera:
             self.name = "CUSTOM"
         else:
             camera_name = "camera_" + name.lower()
-            camera = bpy.data.cameras.new(camera_name)
-            object = bpy.data.objects.new(camera_name, camera)
+            new_camera = bpy.data.cameras.new(camera_name)
+            object = bpy.data.objects.new(camera_name, new_camera)
             object.rotation_euler = rotation
         cu.link_obj_to_collection(object, Camera.collection)
 
@@ -83,14 +84,14 @@ class Camera:
 
     def _set_defaults(self) -> None:
         """Set default camera properties"""
-        self.object.data.type = "PERSP"
-        self.object.data.lens = 2000 if config.blendcfg["SCENE"]["ORTHO_CAM"] else 105
-        self.object.data.clip_start = 0.1
-        self.object.data.clip_end = 15000  # set long clip end for renders
+        self.object.data.type = "PERSP"  # type: ignore
+        self.object.data.lens = 2000 if config.blendcfg["SCENE"]["ORTHO_CAM"] else 105  # type: ignore
+        self.object.data.clip_start = 0.1  # type: ignore
+        self.object.data.clip_end = 15000  # type: ignore # set long clip end for renders
         if config.blendcfg["SCENE"]["DEPTH_OF_FIELD"]:
-            self.object.data.dof.use_dof = True
+            self.object.data.dof.use_dof = True  # type: ignore
 
-    def save_position(self, key: str):
+    def save_position(self, key: str) -> None:
         """
         Save position of the camera to the dictionary under provided key.
         """
@@ -100,20 +101,20 @@ class Camera:
             f"Saved {self.object.name} location: \n{self.positions[key]} as '{key}'"
         )
 
-    def save_focus(self, key: str):
+    def save_focus(self, key: str) -> None:
         """
         Save focus parameters of the camera to the dictionary under provided key.
         Value is a tuple of (focus_distance, aperture_fstop)
         """
         self.focuses[key] = (
-            self.object.data.dof.focus_distance,
-            self.object.data.dof.aperture_fstop,
+            self.object.data.dof.focus_distance,  # type: ignore
+            self.object.data.dof.aperture_fstop,  # type: ignore
         )
         logger.debug(
             f"Saved {self.object.name} focus: \n{self.focuses[key]} as '{key}'"
         )
 
-    def change_position(self, key: str):
+    def change_position(self, key: str) -> None:
         """
         Move camera to position saved in dictionary. Updates focus as well.
         """
@@ -122,19 +123,19 @@ class Camera:
         logger.debug(f"Moved {self.object.name} to '{key}' position.")
         cu.update_depsgraph()
 
-    def change_focus(self, key: str):
+    def change_focus(self, key: str) -> None:
         """
         Use camera focus parameters from position saved in dictionary.
         """
-        self.object.data.dof.focus_distance = self.focuses[key][0]
-        self.object.data.dof.aperture_fstop = self.focuses[key][1]
+        self.object.data.dof.focus_distance = self.focuses[key][0]  # type: ignore
+        self.object.data.dof.aperture_fstop = self.focuses[key][1]  # type: ignore
         logger.debug(f"Changed focus of {self.object.name} to '{key}' position.")
 
     def frame_selected(
         self,
         object: bpy.types.Object,
         zoom: float = 1.05,
-    ):
+    ) -> None:
         """
         Align selected camera to frame all rendered objects.
         Applies zoom afterwards (zoom < 1 - zoom in, zoom > 1 - zoom out).
@@ -149,20 +150,23 @@ class Camera:
 
         logger.debug(f"frame_selected function used for {self.object.name}")
 
-    def set_focus(self, target: Bounds, focal_ratio: float = 0.0625):
+    def set_focus(
+        self,
+        target: Bounds,
+        focal_ratio: float = 0.0625,
+    ) -> None:
         """
         Calculate focus distance based on the distance between camera and rendered object.
         Apply focal ratio.
-        TBD: add focal_ratio to blendcfg?
         """
         cu.set_origin(target.bounds)
-        self.object.data.dof.focus_distance = abs(
+        self.object.data.dof.focus_distance = abs(  # type: ignore
             (target.bounds.location - self.object.location).length
         )
-        self.object.data.dof.aperture_fstop = focal_ratio
+        self.object.data.dof.aperture_fstop = focal_ratio  # type: ignore
         logger.debug(f"set_focus function used for {self.object.name}")
 
-    def align(self, rendered_obj: bpy.types.Object, target: Bounds, **kwargs):
+    def align(self, rendered_obj: bpy.types.Object, target: Bounds, **kwargs) -> None:
         """
         Align camera to all rendered objects and then recalculate focus distance.
         Args:
@@ -181,7 +185,9 @@ class Camera:
         self.frame_selected(rendered_obj, **frame_selected_args)
         self.set_focus(target, **set_focus_args)
 
-    def add_keyframe(self, frame, translations: bool = True, focus: bool = True):
+    def add_keyframe(
+        self, frame: int, translations: bool = True, focus: bool = True
+    ) -> None:
         """
         Add keyframe operation to be performed after changing camera position and/or focus.
         Keyframe is added at specified frame.
@@ -190,16 +196,16 @@ class Camera:
             self.object.keyframe_insert(data_path="rotation_euler", frame=frame)
             self.object.keyframe_insert(data_path="location", frame=frame)
         if focus:
-            self.object.data.dof.keyframe_insert(
+            self.object.data.dof.keyframe_insert(  # type: ignore
                 data_path="focus_distance", frame=frame
             )
-            self.object.data.dof.keyframe_insert(
+            self.object.data.dof.keyframe_insert(  # type: ignore
                 data_path="aperture_fstop", frame=frame
             )
 
     def add_intermediate_keyframe(
         self, rendered_obj: bpy.types.Object, progress: float, zoom: float = 1.0
-    ):
+    ) -> None:
         """
         Insert intermediate keyframes for the camera at a specified fraction of the animation timeline, aligning it with the rendered object.
         This ensures the object remains within the camera frame during interpolated movement. The method also allows optional adjustment of the
@@ -216,13 +222,13 @@ class Camera:
         self.object.keyframe_insert(data_path="location", frame=scene.frame_current)
 
     @contextmanager
-    def dof_override(self):
+    def dof_override(self) -> Generator[None, Any, None]:
         """Temporarily disable depth of field of the camera."""
         try:
-            self.object.data.dof.use_dof = False
+            self.object.data.dof.use_dof = False  # type: ignore
             yield
         except AttributeError:
             pass
         finally:
             if config.blendcfg["SCENE"]["DEPTH_OF_FIELD"]:
-                self.object.data.dof.use_dof = True
+                self.object.data.dof.use_dof = True  # type: ignore

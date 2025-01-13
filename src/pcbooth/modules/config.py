@@ -15,6 +15,7 @@ fab_path: str = ""
 env_texture_path: str = ""
 backgrounds_path: str = ""
 renders_path: str = ""
+animations_path: str = ""
 PCB_name: str = ""
 pcb_blend_path: str = ""
 
@@ -71,7 +72,6 @@ def configure_paths(arguments: argparse.Namespace) -> None:
     backgrounds_path = pcbt_dir_path + "/templates/backgrounds/"
     renders_path = prj_path + blendcfg["SETTINGS"]["RENDER_DIR"] + "/"
     animations_path = prj_path + blendcfg["SETTINGS"]["ANIMATION_DIR"] + "/"
-    # hotareas_path = project_path + "assets/hotareas/"
 
     # Determine blend_path
     if arguments.blend_path is None:

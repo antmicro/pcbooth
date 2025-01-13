@@ -17,7 +17,7 @@ class Job(ABC):
     def __init__(self) -> None:
         self._iter: int = 0
         self._total: int = 1
-        self.studio: Studio = None
+        self.studio: Studio
         self._actions_backup: List[bpy.types.Action] = []
 
     def execute(self, studio: Studio) -> None:
@@ -38,7 +38,7 @@ class Job(ABC):
         self.studio = copy(studio)
         self._override_studio()
 
-    def _override_studio(self):
+    def _override_studio(self) -> None:
         """
         Override config studio backgrounds, cameras and positions lists for the single job.
         Leave empty if no override is needed.

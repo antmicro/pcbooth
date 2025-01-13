@@ -7,7 +7,8 @@ import sys
 from pathlib import Path
 from contextlib import contextmanager
 from subprocess import run, DEVNULL, PIPE
-from typing import Optional, List, Callable, Literal
+from typing import Generator, Optional, List, Callable, Literal, Any
+from io import TextIOWrapper
 
 import pcbooth.modules.config as config
 
@@ -84,7 +85,7 @@ def link_collection_from_blendfile(
 
 
 @contextmanager
-def stdout_redirected(to=os.devnull):
+def stdout_redirected(to: str = os.devnull) -> Generator[None, Any, None]:
     """
     Redirect the standard output to dev/null.
 
@@ -97,7 +98,7 @@ def stdout_redirected(to=os.devnull):
 
     fd = sys.stdout.fileno()
 
-    def _redirect_stdout(to):
+    def _redirect_stdout(to: TextIOWrapper) -> None:
         sys.stdout.close()  # + implicit flush()
         os.dup2(to.fileno(), fd)  # fd writes to 'to' file
         sys.stdout = os.fdopen(fd, "w")  # Python writes to fd

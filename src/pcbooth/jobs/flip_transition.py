@@ -1,6 +1,7 @@
 import bpy
 import pcbooth.core.job
 from pcbooth.modules.background import Background
+from pcbooth.modules.camera import Camera
 from pcbooth.modules.renderer import FFmpegWrapper, RendererWrapper
 import logging
 
@@ -20,8 +21,9 @@ class FlipTransition(pcbooth.core.job.Job):
     e.g. rightT_leftT.webp, for each combination.
     """
 
-    def _override_studio(self):
-        self.studio.backgrounds = [Background.get("transparent")]
+    def _override_studio(self) -> None:
+        if background := Background.get("transparent"):
+            self.studio.backgrounds = [background]
         self.studio.positions = ["TOP", "BOTTOM"]
 
     def iterate(self) -> None:
@@ -44,7 +46,7 @@ class FlipTransition(pcbooth.core.job.Job):
             self.update_status()
         ffmpeg.clear_frames()
 
-    def create_model_keyframes(self):
+    def create_model_keyframes(self) -> None:
         scene = bpy.context.scene
 
         # create rendered object keyframes
@@ -58,7 +60,7 @@ class FlipTransition(pcbooth.core.job.Job):
             data_path="rotation_euler", frame=scene.frame_end
         )
 
-    def create_camera_keyframes(self, camera):
+    def create_camera_keyframes(self, camera: Camera) -> None:
         scene = bpy.context.scene
 
         # create start camera + focus keyframes

@@ -37,8 +37,8 @@ class Studio:
         self.is_pcb: bool = False
         self.is_collection: bool = False
         self.is_object: bool = False
-        self.rendered_obj: bpy.types.Object = None  # object to align camera to
-        self.top_parent: bpy.types.Object = None  # object to apply rotation
+        self.rendered_obj: bpy.types.Object
+        self.top_parent: bpy.types.Object
         self.display_rot: int = 0
         self.top_components: List[bpy.types.Object] = []
         self.bottom_components: List[bpy.types.Object] = []
@@ -59,7 +59,7 @@ class Studio:
             blend_scene_path = config.pcb_blend_path.replace(".blend", "_scene.blend")
             cu.save_pcb_blend(blend_scene_path)
 
-    def _add_cameras(self):
+    def _add_cameras(self) -> None:
         Camera.add_collection()
 
         for camera_name, _ in Camera.presets.items():
@@ -90,7 +90,7 @@ class Studio:
         self.positions = [pos for pos in Studio.presets if pos in cfg_pos]
         self.change_position("TOP")
 
-    def _add_backgrounds(self):
+    def _add_backgrounds(self) -> None:
         Background.add_collection()
 
         for bg_name in Background.files:
@@ -104,7 +104,7 @@ class Studio:
         cfg_bgs = config.blendcfg["BACKGROUNDS"]["LIST"]
         self.backgrounds = [bg for bg in Background.objects if bg.name in cfg_bgs]
 
-    def _add_lights(self):
+    def _add_lights(self) -> None:
         Light.add_collection()
         Light.bind_to_object(self.top_parent)
 
@@ -116,12 +116,12 @@ class Studio:
         )
         self.lights = Light.objects
 
-    def _apply_effects(self):
+    def _apply_effects(self) -> None:
         """Enable or disable additional studio effects"""
         if not config.blendcfg["SCENE"]["LED_ON"]:
             disable_emission_nodes()
 
-    def _configure_model_data(self):
+    def _configure_model_data(self) -> None:
         """Assign configurational attributes' values based on loaded model contents."""
         logger.info("Configuring studio...")
 
@@ -158,9 +158,9 @@ class Studio:
             logger.info("Unknown type model was recognized.")
             self._configure_as_unknown()
 
-    def _configure_as_PCB(self):
+    def _configure_as_PCB(self) -> None:
         self.is_pcb = True
-        self.top_parent = bpy.data.objects.get(config.PCB_name, "")
+        self.top_parent = bpy.data.objects.get(config.PCB_name)
         if not self.top_parent:
             raise RuntimeError(
                 f"{config.PCB_name} object could not be found in Blender model data."
@@ -169,9 +169,9 @@ class Studio:
         self.components = cu.select_all(self.top_parent)
         self._get_top_bottom_components()
 
-    def _configure_as_collection(self, collection_name):
+    def _configure_as_collection(self, collection_name: str) -> None:
         self.is_collection = True
-        rendered_col = bpy.data.collections.get(collection_name, "")
+        rendered_col = bpy.data.collections.get(collection_name)
         if not rendered_col:
             raise RuntimeError(
                 f"{collection_name} collection could not be found in Blender model data."
@@ -184,9 +184,9 @@ class Studio:
         cu.parent_list_to_object(rendered_components, self.rendered_obj)
         cu.parent_list_to_object(scene_components, self.top_parent)
 
-    def _configure_as_singleobject(self, object_name):
+    def _configure_as_singleobject(self, object_name: str) -> None:
         self.is_object = True
-        self.rendered_obj = bpy.data.objects.get(object_name, "")
+        self.rendered_obj = bpy.data.objects.get(object_name)
         if not self.rendered_obj:
             raise RuntimeError(
                 f"{object_name} object could not be found in Blender model data."
@@ -195,14 +195,14 @@ class Studio:
         self.top_parent = cu.get_top_parent(self.rendered_obj)
         cu.set_origin(self.rendered_obj)  # needed to correctly calculate focus
 
-    def _configure_as_unknown(self):
+    def _configure_as_unknown(self) -> None:
         self.top_parent = cu.add_empty("_parent")
         self.rendered_obj = self.top_parent
         components = [object for object in bpy.data.objects]
         self._get_top_bottom_components(components)
         cu.parent_list_to_object(components, self.top_parent)
 
-    def _configure_position(self):
+    def _configure_position(self) -> None:
         """
         Adjust model position before render and assign values to positions dict.
         When selected object is a child, rotates and moves top parent.
@@ -233,7 +233,7 @@ class Studio:
             if not components:
                 return
             for comp in components.objects:
-                if "PCB_Side" not in comp.keys():
+                if "PCB_Side" not in comp.keys():  # type: ignore
                     continue
                 if comp["PCB_Side"] == "T":
                     top_comps.append(comp)
@@ -247,7 +247,7 @@ class Studio:
         self.top_components = top_comps
         self.bottom_components = bot_comps
 
-    def change_position(self, key: str):
+    def change_position(self, key: str) -> None:
         """
         Move rendered_object to position saved in dictionary.
         """

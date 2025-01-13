@@ -1,16 +1,21 @@
 """Module containing utility functions for rendering jobs."""
 
-from typing import List, Callable, Optional
+from typing import Generator, List, Callable, Optional, Any
 import bpy
 from contextlib import contextmanager
 from pcbooth.modules.renderer import (
     restore_default_cycles,
     set_default_compositing,
 )
+from pcbooth.modules.light import Light
+from pcbooth.modules.background import Background
+from mathutils import Vector, Euler
 
 
 @contextmanager
-def holdout_override(components: List[bpy.types.Object], unobstructed: bool = False):
+def holdout_override(
+    components: List[bpy.types.Object], unobstructed: bool = False
+) -> Generator[None, Any, None]:
     """Apply holdout override for components from provided list. If non_obstructed"""
     try:
         if unobstructed:
@@ -30,21 +35,28 @@ def holdout_override(components: List[bpy.types.Object], unobstructed: bool = Fa
 
 
 @contextmanager
-def hide_override(components: List[bpy.types.Object]):
+def hide_override(
+    components: List[bpy.types.Object], hide_viewport: bool = False
+) -> Generator[None, Any, None]:
     """Apply hide from render override for components from provided list."""
     try:
         for component in components:
             component.hide_render = True
+            if hide_viewport:
+                component.hide_viewport = True
         yield
     except AttributeError:
         pass
     finally:
         for component in components:
             component.hide_render = False
+            component.hide_viewport = False
 
 
 @contextmanager
-def global_material_override(base_material: Optional[bpy.types.Material] = None):
+def global_material_override(
+    base_material: Optional[bpy.types.Material] = None,
+) -> Generator[None, Any, None]:
     """Apply global material override for all objects in a scene."""
     try:
         if base_material:
@@ -59,14 +71,14 @@ def global_material_override(base_material: Optional[bpy.types.Material] = None)
     except (AttributeError, RuntimeError):
         pass
     finally:
-        bpy.context.view_layer.material_override = None
+        bpy.context.view_layer.material_override = None  # type: ignore
 
 
 @contextmanager
 def material_override(
     base_material: bpy.types.Material,
     components: List[bpy.types.Object],
-):
+) -> Generator[None, Any, None]:
     """
     Override all materials with the specified one for all components in the list.
     Skips linked objects. Generates backup dictionary with the material slots for revert.
@@ -93,7 +105,7 @@ def material_override(
 
 
 @contextmanager
-def compositing_override(compositing_func: Callable):
+def compositing_override(compositing_func: Callable) -> Generator[None, Any, None]:
     """Apply compositor override."""
     try:
         compositing_func()
@@ -105,7 +117,7 @@ def compositing_override(compositing_func: Callable):
 
 
 @contextmanager
-def cycles_override(settings_func: Callable):
+def cycles_override(settings_func: Callable) -> Generator[None, Any, None]:
     """Apply Cycles settings override."""
     try:
         settings_func()
@@ -114,3 +126,45 @@ def cycles_override(settings_func: Callable):
         pass
     finally:
         restore_default_cycles()
+
+
+@contextmanager
+def shadow_override(components: List[bpy.types.Object]) -> Generator[None, Any, None]:
+    """Override object visibility to shadow rays."""
+    try:
+        for component in components:
+            component.visible_shadow = False
+        yield
+    except AttributeError:
+        pass
+    finally:
+        for component in components:
+            component.visible_shadow = True
+
+
+@contextmanager
+def position_override(
+    components: List[bpy.types.Object],
+    position_func: Callable[[List[bpy.types.Object]], None],
+    rendered_obj: Optional[bpy.types.Object] = None,
+) -> Generator[None, Any, None]:
+    """
+    Temporarily change location or rotation of components from provided list by updating their delta location and Euler rotation. Uses function passed as argument.
+    Restore original location and rotation in the end. By passing rendered object to the context manager,
+    light will be adjusted to the updated model position as well.
+    """
+    try:
+        position_func(components)
+        if rendered_obj:
+            Light.update_position(rendered_obj)
+            Background.update_position(rendered_obj)
+        yield
+    except AttributeError:
+        pass
+    finally:
+        for component in components:
+            component.delta_location = Vector((0, 0, 0))  # type: ignore
+            component.delta_rotation_euler = Euler((0, 0, 0))  # type: ignore
+        if rendered_obj:
+            Light.update_position(rendered_obj, restore=True)
+            Background.update_position(rendered_obj)

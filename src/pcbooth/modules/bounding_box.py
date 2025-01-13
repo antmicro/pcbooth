@@ -1,10 +1,11 @@
 """Bounding box calculation module."""
 
 import bpy
-from typing import List, Tuple
+from typing import List, Tuple, Self, Type
 from mathutils import Vector
 import logging
 import pcbooth.modules.custom_utilities as cu
+from types import TracebackType
 
 logger = logging.getLogger(__name__)
 
@@ -28,25 +29,25 @@ class Bounds:
             highest vertex Z value
     """
 
-    def __init__(self, objects: List[bpy.types.Object]) -> List[Vector]:
+    def __init__(self, objects: List[bpy.types.Object]) -> None:
         """
-        Initialize bounds context manager.
+        Initialize bounds context manager and create bounds empty object.
         """
-        self.objects = objects
-        self.bounds = None
-        self.min_z = 0
-        self.max_z = 0
+        self.objects: List[bpy.types.Object] = objects
+        self.bounds: bpy.types.Object = generate_bounds(self.objects)
+        self.min_z: float = self._get_min_z()
+        self.max_z: float = self._get_max_z()
 
-    def __enter__(self):
-        """
-        Create bounds empty object.
-        """
-        self.bounds = generate_bounds(self.objects)
-        self.min_z = self._get_min_z()
-        self.max_z = self._get_max_z()
+    def __enter__(self) -> Self:
+        """Return Bounds object."""
         return self
 
-    def __exit__(self, exc_type, exc_value, exc_traceback):
+    def __exit__(
+        self,
+        exc_type: Type[BaseException] | None,
+        exc_value: BaseException | None,
+        exc_traceback: TracebackType | None,
+    ) -> None:
         """
         Remove bounds data from scene.
         """
@@ -55,23 +56,25 @@ class Bounds:
     def _get_min_z(self) -> float:
         """Get lowest Z coordinate of all bounding box vertices coordinates of an object"""
         current_vertices = [
-            Vector(v[:]) @ self.bounds.matrix_world for v in self.bounds.bound_box
+            Vector(v[:]) @ self.bounds.matrix_world for v in self.bounds.bound_box  # type: ignore
         ]
         return min([v.z for v in current_vertices])
 
     def _get_max_z(self) -> float:
         """Get highest Z coordinate of all bounding box vertices coordinates of an object"""
         current_vertices = [
-            Vector(v[:]) @ self.bounds.matrix_world for v in self.bounds.bound_box
+            Vector(v[:]) @ self.bounds.matrix_world for v in self.bounds.bound_box  # type: ignore
         ]
         return max([v.z for v in current_vertices])
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear bounds object data."""
-        bpy.data.meshes.remove(self.bounds.data)
+        bpy.data.meshes.remove(self.bounds.data)  # type: ignore
 
 
-def get_vertices(objects: List[bpy.types.Object]) -> List[Vector]:
+def get_vertices(
+    objects: List[bpy.types.Object],
+) -> List[Vector]:
     """Get list of all vertices of objects passed as a list."""
     vertices = []
     objects_list = [obj.name for obj in objects]
@@ -92,14 +95,14 @@ def get_vertices(objects: List[bpy.types.Object]) -> List[Vector]:
         if obj.library:
             if lib_obj := cu.get_root_object(obj):
                 bbox_obj = [
-                    obj.matrix_world @ Vector(corner) for corner in obj.bound_box
+                    obj.matrix_world @ Vector(corner) for corner in obj.bound_box  # type: ignore
                 ]
                 bbox_lib = [lib_obj.matrix_world @ corner for corner in bbox_obj]
                 vertices.extend(bbox_lib)
             else:
                 continue
         elif obj.name in objects_list and obj.instance_type == "NONE":
-            bbox = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]
+            bbox = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]  # type: ignore
             vertices.extend(bbox)
     if not vertices:
         raise RuntimeError(f"No rendered object vertices found")
@@ -129,7 +132,9 @@ def generate_bounds(objects: List[bpy.types.Object]) -> bpy.types.Object:
     return obj
 
 
-def generate_mesh(vertices: List[Vector]) -> bpy.types.Object:
+def generate_mesh(
+    vertices: List[Tuple[float, float, float]] | List[Vector]
+) -> bpy.types.Object:
     """Generate mesh from vertices, edges and faces lists"""
     mesh = bpy.data.meshes.new(BOUNDS_NAME)
     mesh.from_pydata(vertices, [], [])
@@ -139,7 +144,9 @@ def generate_mesh(vertices: List[Vector]) -> bpy.types.Object:
     return obj
 
 
-def calculate_bbox(vector: List[Vector]) -> List[Tuple[int, int, int]]:
+def calculate_bbox(
+    vector: List[Vector],
+) -> List[Tuple[float, float, float]]:
     """Calculate bounding box in form of list of tuples from provided list of points"""
     # Initialize min and max values with the coordinates of the first point
     min_x, min_y, min_z = max_x, max_y, max_z = vector[0].x, vector[0].y, vector[0].z

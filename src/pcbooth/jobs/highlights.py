@@ -1,12 +1,13 @@
 import bpy
 import pcbooth.core.job
+from pcbooth.modules.camera import Camera
 from pcbooth.modules.background import Background
 from pcbooth.modules.renderer import RendererWrapper
 import pcbooth.modules.custom_utilities as cu
 import pcbooth.modules.job_utilities as ju
 import logging
 
-from typing import List, Tuple, Dict, Any
+from typing import Generator, List, Tuple, Dict, Any
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,8 @@ class Highlights(pcbooth.core.job.Job):
     """
 
     def _override_studio(self) -> None:
-        self.studio.backgrounds = [Background.get("paper_white")]
+        if background := Background.get("paper_white"):
+            self.studio.backgrounds = [background]
         self.studio.positions = ["TOP", "BOTTOM"]
 
     def iterate(self) -> None:
@@ -57,7 +59,7 @@ class Highlights(pcbooth.core.job.Job):
         highlight_mat = add_material("highlight", HIGHLIGHT_RGB)
 
         with ju.hide_override(hidden), ju.material_override(
-            white_mat, bpy.data.objects
+            white_mat, list(bpy.data.objects)
         ):
             for camera in self.studio.cameras:
                 for component in highlighted:
@@ -70,7 +72,14 @@ class Highlights(pcbooth.core.job.Job):
                                 "BOTTOM", component, object, camera, renderer
                             )
 
-    def render_side(self, side: str, component, target, camera, renderer) -> None:
+    def render_side(
+        self,
+        side: str,
+        component: bpy.types.Object,
+        target: bpy.types.Object,
+        camera: Camera,
+        renderer: RendererWrapper,
+    ) -> None:
         """Rendering functions to be called for each side."""
         filename = self.get_name(component, side, camera)
         self.studio.change_position(side)
@@ -105,7 +114,7 @@ class Highlights(pcbooth.core.job.Job):
             logger.warning("No highlighted components found!")
         return highlighted, hidden
 
-    def get_name(self, object, position, camera) -> str:
+    def get_name(self, object: bpy.types.Object, position: str, camera: Camera) -> str:
         """Get object name or designator, depends on model type (designator if model is a PCB, object name if other)"""
         prefix = f"highlights/"
         suffix = f"_{camera.name.lower()}" if camera.name != "TOP" else ""
@@ -154,11 +163,11 @@ def add_material(name: str, rgb: str) -> bpy.types.Material:
     rgba = cu.hex_to_rgb(rgb) + (1.0,)
     material = bpy.data.materials.new(name)
     material.use_nodes = True
-    material.node_tree.nodes["Principled BSDF"].inputs[0].default_value = rgba
+    material.node_tree.nodes["Principled BSDF"].inputs[0].default_value = rgba  # type: ignore
     return material
 
 
-def set_material(object: bpy.types.Object, material: bpy.types.Material):
+def set_material(object: bpy.types.Object, material: bpy.types.Material) -> None:
     """Sets provided material in all material slots of an object. Skips linked objects."""
     if object.library:
         return

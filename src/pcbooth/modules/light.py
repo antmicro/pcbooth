@@ -2,8 +2,10 @@
 
 import bpy
 from math import radians
-from typing import List, Tuple, Dict, ClassVar, Self
+from typing import List, Tuple, Dict, ClassVar, Optional
 import logging
+
+from bpy.types import Object
 
 import pcbooth.modules.config as config
 import pcbooth.modules.custom_utilities as cu
@@ -19,18 +21,18 @@ def load_hdri() -> None:
     scene = bpy.context.scene
     nodes = scene.world.node_tree.nodes
     links = scene.world.node_tree.links
-    nodes.clear()
+    nodes.clear()  # type: ignore
 
     texture_coordinate = nodes.new(type="ShaderNodeTexCoord")
 
     mapping = nodes.new(type="ShaderNodeMapping")
-    mapping.inputs["Rotation"].default_value = (radians(-30), radians(0), radians(160))
+    mapping.inputs["Rotation"].default_value = (radians(-30), radians(0), radians(160))  # type: ignore
 
     hdri = nodes.new("ShaderNodeTexEnvironment")
-    hdri.image = bpy.data.images.load(config.env_texture_path)
+    hdri.image = bpy.data.images.load(config.env_texture_path)  # type: ignore
 
     background = nodes.new(type="ShaderNodeBackground")
-    background.inputs["Strength"].default_value = config.blendcfg["SCENE"][
+    background.inputs["Strength"].default_value = config.blendcfg["SCENE"][  # type: ignore
         "HDRI_INTENSITY"
     ]
 
@@ -93,21 +95,22 @@ def disable_emission_nodes() -> None:
             if node.type == "EMISSION":
                 node.mute = True
             if node.type == "BSDF_PRINCIPLED":
-                node.inputs[27].default_value = 0
+                node.inputs[27].default_value = 0  # type: ignore
 
 
 class Light:
     objects: ClassVar[List["Light"]] = []
-    collection: bpy.types.Collection = None
-    presets: Dict[str, Tuple] = {}
+    collection: bpy.types.Collection
+    presets: Dict[
+        str, Tuple[Tuple[float, float, float], tuple[float, float, float], float]
+    ] = {}
     obj_y: float = 0.0
     obj_x: float = 0.0
 
     @classmethod
-    def add_collection(cls):
+    def add_collection(cls) -> None:
         """
         Create new Lights collection, configures HDRI.
-
         """
         studio = cu.get_collection("Studio")
         collection = cu.get_collection("Lights", studio)
@@ -115,11 +118,12 @@ class Light:
         load_hdri()
 
     @classmethod
-    def get(cls, name: str) -> Self | None:
+    def get(cls, name: str) -> Optional["Light"]:
         """Get Camera object by name string."""
         for object in cls.objects:
             if object.name == name:
                 return object
+        logger.warning(f"Light: {name} not found.")
         return None
 
     @classmethod
@@ -135,13 +139,28 @@ class Light:
 
         # presets include rotation tuple, location tuple, internal intensity
         cls.presets = {
-            "TOP": ((radians(0), radians(0), radians(0)), (0, 0, z_coord), 1),
+            "TOP": ((radians(0), radians(0), radians(0)), (0.0, 0.0, z_coord), 1.0),
             "BACK": (
                 (radians(-25), radians(0), radians(0)),
-                (0, cls.obj_y / 2, z_coord),
+                (0.0, cls.obj_y / 2, z_coord),
                 0.66,
             ),
         }
+
+    @classmethod
+    def update_position(cls, object: bpy.types.Object, restore: bool = False):
+        """Update position (Z coordinate) of all added lights in relation to current highest point of rendered object"""
+        if restore:
+            for lt in cls.objects:
+                lt.object.rotation_euler = cls.presets[lt.name][0]
+                lt.object.location = cls.presets[lt.name][1]
+        else:
+            with Bounds(cu.select_all(object)) as target:
+                z_coord = calculate_z_coordinate(target.max_z, cls.obj_x, cls.obj_y)
+            for lt in cls.objects:
+                lt.object.location.z = z_coord
+        logger.debug(f"Lights moved to Z: {lt.object.location.z}")
+        cu.update_depsgraph()
 
     def __init__(
         self,
@@ -160,6 +179,7 @@ class Light:
             )
 
         self.object: bpy.types.Object = self._add(name, rotation, location, intensity)
+        self.name = name
 
     def _add(
         self,
@@ -167,24 +187,24 @@ class Light:
         rotation: Tuple[float, float, float],
         location: Tuple[float, float, float],
         intensity: float,
-    ):
+    ) -> bpy.types.Object:
         """
         Create light object.
         """
         light_name = "light_" + name.lower()
         light = bpy.data.lights.new(light_name, type="AREA")
-        light.spread = radians(140)
+        light.spread = radians(140)  # type: ignore
         light.color = cu.hex_to_rgb(config.blendcfg["SCENE"]["LIGHTS_COLOR"])
-        light.shape = "RECTANGLE"
+        light.shape = "RECTANGLE"  # type: ignore
 
         config_intensity = config.blendcfg["SCENE"]["LIGHTS_INTENSITY"] * intensity
-        light.energy = calculate_light_intensity(
+        light.energy = calculate_light_intensity(  # type: ignore
             config_intensity, Light.obj_x, Light.obj_y
         )
 
         light_size = calculate_light_size(Light.obj_x, Light.obj_y)
-        light.size = light_size[0]
-        light.size_y = light_size[1]
+        light.size = light_size[0]  # type: ignore
+        light.size_y = light_size[1]  # type: ignore
 
         object = bpy.data.objects.new(light_name, light)
         object.rotation_euler = rotation
@@ -196,5 +216,3 @@ class Light:
         Light.objects.append(self)
 
         return object
-
-    # TODO: add some kind of update position method to be used when animating rotations of rendered object

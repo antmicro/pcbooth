@@ -3,12 +3,12 @@
 import bpy
 import logging
 from pathlib import Path
-from typing import Callable, Tuple, Optional
+from typing import Callable, Optional, Collection
 
 from bpy.types import Image
 from pcbooth.modules.file_io import stdout_redirected, execute_cmd
 import pcbooth.modules.config as config
-from typing import Dict, List, Callable
+from typing import Dict, List, Callable, Any, cast
 from pcbooth.modules.file_io import remove_file, mkdir
 from glob import glob
 
@@ -21,7 +21,7 @@ CACHE_FORMAT = "PNG"
 CACHE_NAME = "_tmp_render"
 
 
-def setup_ultralow_cycles() -> Tuple[bpy.types.PropertyGroup, bpy.types.PropertyGroup]:
+def setup_ultralow_cycles() -> None:
     """
     Configure the Cycles render engine for ultra-low quality and to minimize the time required to render an image.
     """
@@ -52,7 +52,7 @@ def restore_default_cycles() -> None:
     for prop in dir(cycles):
         if not prop.startswith("_") and hasattr(cycles, prop):
             try:
-                default_value = bpy.types.CyclesSettings.bl_rna.properties[prop].default
+                default_value = bpy.types.CyclesSettings.bl_rna.properties[prop].default  # type: ignore
                 setattr(cycles, prop, default_value)
             except AttributeError:
                 pass
@@ -61,7 +61,7 @@ def restore_default_cycles() -> None:
     for prop in dir(cycles_visibility):
         if not prop.startswith("_") and hasattr(cycles_visibility, prop):
             try:
-                default_value = bpy.types.CyclesVisibilitySettings.bl_rna.properties[
+                default_value = bpy.types.CyclesVisibilitySettings.bl_rna.properties[  # type: ignore
                     prop
                 ].default
                 setattr(cycles_visibility, prop, default_value)
@@ -70,7 +70,7 @@ def restore_default_cycles() -> None:
     init_render_settings()
 
 
-def compositing(set) -> Callable:
+def compositing(set: Callable[[], Any]) -> Callable[[], Any]:
     """Compositing decorator, makes sure scene uses nodes and clears the current setup before changing it to another"""
 
     def _set_compositing() -> None:
@@ -91,8 +91,8 @@ def set_default_compositing() -> None:
 
     rend_layers_node = tree.nodes.new(type="CompositorNodeRLayers")
     glare_node = tree.nodes.new(type="CompositorNodeGlare")
-    glare_node.glare_type = "FOG_GLOW"
-    glare_node.size = 5
+    glare_node.glare_type = "FOG_GLOW"  # type: ignore
+    glare_node.size = 5  # type: ignore
     viewer_node = tree.nodes.new("CompositorNodeViewer")
     comp_node = tree.nodes.new("CompositorNodeComposite")
 
@@ -112,8 +112,8 @@ def set_lqbw_compositing() -> None:
     mix_node = tree.nodes.new(type="CompositorNodeMixRGB")
     rgb_white_node = tree.nodes.new(type="CompositorNodeRGB")
     rgb_black_node = tree.nodes.new(type="CompositorNodeRGB")
-    rgb_white_node.outputs[0].default_value[:] = 1, 1, 1, 1
-    rgb_black_node.outputs[0].default_value[:] = 0.0, 0.0, 0.0, 1
+    rgb_white_node.outputs[0].default_value[:] = 1, 1, 1, 1  # type: ignore
+    rgb_black_node.outputs[0].default_value[:] = 0.0, 0.0, 0.0, 1  # type: ignore
 
     links = tree.links
     links.new(
@@ -140,9 +140,9 @@ def setup_gpu() -> None:
     If no suitable GPU is found, use CPU instead.
     """
     cycles_preferences = bpy.context.preferences.addons["cycles"].preferences
-    cycles_preferences.refresh_devices()
+    cycles_preferences.refresh_devices()  # type: ignore
     logger.debug(
-        f"Available devices: {[device for device in cycles_preferences.devices]}"
+        f"Available devices: {[device for device in cycles_preferences.devices]}"  # type: ignore
     )
     gpu_types = [
         "CUDA",
@@ -154,22 +154,22 @@ def setup_gpu() -> None:
 
     try:
         device = next(
-            (dev for dev in cycles_preferences.devices if dev.type in gpu_types)
+            (dev for dev in cycles_preferences.devices if dev.type in gpu_types)  # type: ignore
         )
         bpy.context.scene.cycles.device = "GPU"
-        cycles_preferences.compute_device_type = device.type
+        cycles_preferences.compute_device_type = device.type  # type: ignore
         logger.info(f"Enabled GPU rendering with: {device.name}.")
     except StopIteration:
         device = next(
-            (dev for dev in cycles_preferences.devices if dev.type == "CPU"), None
+            (dev for dev in cycles_preferences.devices if dev.type == "CPU"), None  # type: ignore
         )
         bpy.context.scene.cycles.device = "CPU"
-        cycles_preferences.compute_device_type = "NONE"
+        cycles_preferences.compute_device_type = "NONE"  # type: ignore
         logger.info(f"No GPU device found, enabled CPU rendering with: {device.name}")
     device.use = True
 
 
-def init_render_settings():
+def init_render_settings() -> None:
     """Setup initial renderer properties."""
     logger.info("Setting up initial render properties...")
     scene = bpy.context.scene
@@ -196,12 +196,12 @@ class RendererWrapper:
 
     def __init__(self) -> None:
         self.formats = config.blendcfg["SETTINGS"]["IMAGE_FORMAT"]
-        self.img_ext = None
-        self.cache = None
-        self.cache_path = None
+        self.img_ext: str
+        self.cache: bpy.types.Image | None = None
+        self.cache_path: str
         self.tmb_x = config.blendcfg["RENDERER"]["THUMBNAIL_WIDTH"]
         self.tmb_y = config.blendcfg["RENDERER"]["THUMBNAIL_HEIGHT"]
-        self.render_path = config.renders_path
+        self.render_path: str = config.renders_path
 
     def _set_image_format(self, format: str) -> None:
         """
@@ -249,7 +249,7 @@ class RendererWrapper:
         camera: bpy.types.Object,
         file_name: str,
         format_override: Optional[str] = None,
-    ) -> bpy.types.Image:
+    ) -> None:
         """
         Render an image using specified camera and save under provided file name.
         Optional format_override can be used to ignore format list from config file.
@@ -280,9 +280,11 @@ class RendererWrapper:
         Make thumbnail copy of a rendered image. Uses previously saved render image data.
         Uses cached render from _init_render method.
         """
+        if not config.blendcfg["SETTINGS"]["THUMBNAILS"]:
+            return
         if not self.cache:
             logger.info(f"Rendering {file_name}...")
-            self.cache = self._init_render(camera)
+            self._init_render(camera)
             if not self.cache:
                 return
 
@@ -294,12 +296,12 @@ class RendererWrapper:
             self._set_image_format(format)
             abs_path = scene.render.filepath + "_thumbnail" + self.img_ext
 
-            new_render = self.cache.copy()
+            new_render = cast(bpy.types.Image, self.cache.copy())
             new_render.scale(self.tmb_x, self.tmb_y)
             self._save_render(new_render, abs_path)
             bpy.data.images.remove(new_render)
 
-    def render_animation(self, camera: bpy.types.Object, file_name) -> None:
+    def render_animation(self, camera: bpy.types.Object, file_name: str) -> None:
         """
         Render sequence of images iterating over frame count range from bpy.context.scene.
         Clears cache after each frame as they are not supposed to be rendered as mutliple format.
@@ -311,7 +313,7 @@ class RendererWrapper:
             self.render(camera, frame_name, CACHE_FORMAT)
             self.clear_cache()
 
-    def clear_cache(self):
+    def clear_cache(self) -> None:
         """
         Remove render cache file. Looks for CACHE_NAME files. Sets cache attribute to None.
         """
@@ -352,8 +354,8 @@ class FFmpegWrapper:
 
     def __init__(self) -> None:
         self.formats = config.blendcfg["SETTINGS"]["VIDEO_FORMAT"]
-        self.format = None
-        self.vid_ext = None
+        self.format: str
+        self.vid_ext: str
         self.img_ext = bpy.context.scene.render.file_extension
         self.res_x = config.blendcfg["RENDERER"]["VIDEO_WIDTH"]
         self.res_y = config.blendcfg["RENDERER"]["VIDEO_HEIGHT"]
@@ -385,7 +387,7 @@ class FFmpegWrapper:
             self._set_video_format(format)
             decoder = FFmpegWrapper.FORMAT_ARGUMENTS[self.format]
             input_dict = {
-                **({"-c:v": decoder} if decoder else {}),
+                **({"-c:v": str(decoder)} if decoder else {}),
                 "-i": f"{self.animation_path}{input_file}{self.vid_ext}",
                 "-vf": "reverse",
             }
@@ -393,11 +395,13 @@ class FFmpegWrapper:
 
     def thumbnail(self, input_file: str, output_file: str) -> None:
         """Scale existing video file down into thumbnail."""
+        if not config.blendcfg["SETTINGS"]["THUMBNAILS"]:
+            return
         for format in self.formats:
             self._set_video_format(format)
             decoder = FFmpegWrapper.FORMAT_ARGUMENTS[self.format]
             input_dict = {
-                **({"-c:v": decoder} if decoder else {}),
+                **({"-c:v": str(decoder)} if decoder else {}),
                 "-i": f"{self.animation_path}{input_file}{self.vid_ext}",
                 "-vf": f"scale={self.tmb_x}:{self.tmb_y}",
             }
@@ -421,16 +425,16 @@ class FFmpegWrapper:
         execute_cmd(cmd, stdout=True, stderr=True)
         logger.info(f"Sequenced (FFMPEG): {full_output_file}")
 
-    def _get_cmd(self, cmd_dict: Dict[str, str], output_file: str) -> List[str]:
+    def _get_cmd(self, cmd_dict: Dict[str, str], output_file: str | Path) -> List[str]:
         """Prepare list of FFMPEG arguments from dictionary for subprocess library."""
         return (
             ["ffmpeg"]
             + [item for pair in cmd_dict.items() for item in pair]
-            + [output_file]
+            + [str(output_file)]
             + ["-y"]
         )
 
-    def clear_frames(self):
+    def clear_frames(self) -> None:
         """
         Remove frame files after sequencing.
         Recognizes <filename>_<frame_number>.<ext> filenames using regex.

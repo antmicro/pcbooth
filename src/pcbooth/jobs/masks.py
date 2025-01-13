@@ -1,5 +1,6 @@
 import bpy
 import pcbooth.core.job
+from pcbooth.modules.camera import Camera
 from pcbooth.modules.renderer import (
     RendererWrapper,
     set_lqbw_compositing,
@@ -8,8 +9,7 @@ from pcbooth.modules.renderer import (
 import pcbooth.modules.job_utilities as ju
 import pcbooth.modules.custom_utilities as cu
 import logging
-from typing import List, Tuple
-
+from typing import List
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +61,13 @@ class Masks(pcbooth.core.job.Job):
                             if component in self.studio.bottom_components:
                                 self.render_side("BOTTOM", component, camera, renderer)
 
-    def render_side(self, side: str, component, camera, renderer) -> None:
+    def render_side(
+        self,
+        side: str,
+        component: bpy.types.Object,
+        camera: Camera,
+        renderer: RendererWrapper,
+    ) -> None:
         """Rendering functions called regardless of position."""
         filename = self.get_name(component, side, camera)
         self.studio.change_position(side)
@@ -72,7 +78,7 @@ class Masks(pcbooth.core.job.Job):
 
     def get_component_lists(
         self,
-    ) -> Tuple[List[bpy.types.Object], List[bpy.types.Object]]:
+    ) -> List[bpy.types.Object]:
         """
         Get list of components to highlight (HIGHLIGHTED list of designators or all components present if not PCB).
         """
@@ -88,7 +94,7 @@ class Masks(pcbooth.core.job.Job):
             logger.warning("No highlighted components found!")
         return highlighted
 
-    def get_name(self, object, position, camera) -> str:
+    def get_name(self, object: bpy.types.Object, position: str, camera: Camera) -> str:
         """Get object name or designator, depends on model type (designator if model is a PCB, object name if other)"""
         prefix = f"masks/{camera.name.lower()}{position[0]}/"
         if self.studio.is_pcb:

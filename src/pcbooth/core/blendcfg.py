@@ -59,7 +59,7 @@ def parse_strings(arg: str) -> list[str]:
 
 def get_image_formats() -> List[str]:
     """Get list of valid Blender image format extensions."""
-    formats_dict = types.ImageFormatSettings.bl_rna.properties["file_format"].enum_items
+    formats_dict = types.ImageFormatSettings.bl_rna.properties["file_format"].enum_items  # type: ignore
     return [
         item.identifier for item in formats_dict if "Output image" in item.description
     ]
