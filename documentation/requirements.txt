@@ -1,0 +1,7 @@
+myst-parser
+sphinx
+sphinx_tabs
+sphinx-inline-tabs
+sphinxcontrib-video
+
+https://github.com/antmicro/antmicro-sphinx-utils/archive/main.zip
