@@ -46,22 +46,23 @@ ignore-untracked = true
 requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning>=1.0.0,<2.0.0"]
 build-backend = "poetry_dynamic_versioning.backend"
 
-#[tool.ruff]
-#select = ["E", "F", "N", "B", "D", "A", "RET"]
-#line-length = 120
-#target-version = "py311"
-#exclude = [
-#	"documentation",
-#	"__init__.py",
-#]
+[tool.ruff]
+select = ["E", "F", "N", "B", "D", "A", "RET"]
+line-length = 120
+target-version = "py311"
+exclude = [
+	"documentation",
+	"__init__.py",
+]
 
 #[tool.black]
 #line-length = 120
 
-#[tool.mypy]
-#disallow_any_generics = true
-#disallow_untyped_calls = true
-#disallow_incomplete_defs = true
-#check_untyped_defs = true
-#disallow_untyped_decorators = true
-#no_implicit_optional = true
+[tool.mypy]
+disallow_any_generics = true
+disallow_untyped_calls = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+

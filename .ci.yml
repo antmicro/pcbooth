@@ -1,10 +1,91 @@
 stages:
+  - code-checks
+  - test
   - build
   - deploy
 
-image: debian:trixie
+type-correctness:
+  stage: code-checks
+  image: 'debian:bookworm'
+  allow_failure: true
+  script:
+    - apt update && apt -qqy install pip python3-poetry python3.11
+    - poetry add mypy fake-bpy-module-4.1==20240604
+    - poetry install
+    - poetry run mypy --install-types --non-interactive --disallow-untyped-defs src/
 
-build:
+code-formatting:
+  stage: code-checks
+  image: 'debian:bookworm'
+  allow_failure: true
+  script:
+    - apt update && apt -qqy install pip python3-poetry python3.11
+    - poetry add black
+    - poetry install
+    - poetry run black --check src/
+
+.install_pcbooth: &install_pcbooth |-
+    export PATH=$HOME/.local/bin:$PATH
+    mkdir -p logs
+    apt-get -qqy update >> logs/debian_install.log
+    apt-get -qqy update --fix-missing >> logs/debian_install.log
+    apt update && apt-get -qqy install git pip python3.11 python3-poetry python3.11-venv pipx libsm6 ffmpeg >> logs/debian_install.log
+    python3.11 -m pipx install .
+
+.test: &test
+  image: 'debian:bookworm'
+  stage: test
+  only:
+    refs:
+      - merge_requests
+      - main
+  before_script:
+    - *install_pcbooth
+  script:
+    - true
+  artifacts:
+    paths:
+      - blender_renders/
+      - assets/previews/
+
+static-test:
+  <<: *test
+  script:
+    - export PATH=$HOME/.local/bin:$PATH
+    - pcbooth -b sample/*.blend -c static_test
+
+highlights-test:
+  <<: *test
+  script:
+    - export PATH=$HOME/.local/bin:$PATH
+    - pcbooth -b sample/*.blend -c highlights_test
+
+masks-test:
+  <<: *test
+  script:
+    - export PATH=$HOME/.local/bin:$PATH
+    - pcbooth -b sample/*.blend -c masks_test
+
+flip-transition-test:
+  <<: *test
+  script:
+    - export PATH=$HOME/.local/bin:$PATH
+    - pcbooth -b sample/*.blend -c flip_transition_test
+
+camera-transition-test:
+  <<: *test
+  script:
+    - export PATH=$HOME/.local/bin:$PATH
+    - pcbooth -b sample/*.blend -c camera_transition_test
+
+stackup-test:
+  <<: *test
+  script:
+    - export PATH=$HOME/.local/bin:$PATH
+    - pcbooth -b sample/*.blend -c stackup_test
+
+docs-build:
+  image: debian:trixie
   stage: build
   variables:
     GIT_SUBMODULE_STRATEGY: normal
@@ -27,14 +108,16 @@ build:
       - build
       - $CI_DOCS_ARCHIVE
 
-deploy:
+docs-deploy:
+  image: debian:trixie
   variables:
     GIT_STRATEGY: none
   dependencies:
-    - build
+    - docs-build
   stage: deploy
   tags: ['docs']
   script: echo 'Deploying docs'
   artifacts:
     paths:
       - $CI_DOCS_ARCHIVE
+

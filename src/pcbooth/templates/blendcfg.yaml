@@ -1,20 +1,18 @@
 default: &default
-  SETTINGS:
+  SETTINGS: &default_settings
     PRJ_EXTENSION: .kicad_pro         # default extension of project based on which kbe generates name of .blend
     FAB_DIR: fab                      # default directory name containing fabrication files
     RENDER_DIR: blender_renders       # default directory name for storing renders
     ANIMATION_DIR: assets/previews    # default directory name for storing sequenced animations
     IMAGE_FORMAT:                     # list of formats for static image outputs (all supported by Blender)
       - PNG
-      - JPEG
     VIDEO_FORMAT:                     # list of formats for static image outputs (GIF, AVI, WEBM, MP4, MPEG)
       - WEBM
-      - GIF
-    THUMBNAILS: True                  # enables thumbnails for eligible outputs
+    THUMBNAILS: False                 # enables thumbnails for eligible outputs
     KEEP_FRAMES: False                # if True, keeps frame images after sequencing to animation 
     SAVE_SCENE: False                 # saves *_scene.blend file with entire scene setup included
 
-  RENDERER:
+  RENDERER: &default_renderer
     SAMPLES: 32                       # Cycles renderer samples, influence quality of final render and rendering times
     FPS: 25                           # animation frames per second value 
     IMAGE_WIDTH: 1920                 # rendered image width
@@ -24,39 +22,111 @@ default: &default
     THUMBNAIL_WIDTH: 320              # thumbnail image copy width
     THUMBNAIL_HEIGHT: 320             # thumbnail image copy height
 
-  SCENE:
+  SCENE: &default_scene
     LIGHTS_COLOR: FFFFFF              # area lights color (accepts hex values, for example AABBCC) 
     LIGHTS_INTENSITY: 1.0             # area lights intensity float multiplier, set to 0.0 to disable area lights
     HDRI_INTENSITY: 0.5               # HDRI background intensity float multiplier, set to 0.0 to disable HDRI 
     DEPTH_OF_FIELD: True              # enable depth of field for all cameras
-    LED_ON: False                     # enable light emitting shaders on model
+    LED_ON: True                      # enable light emitting shaders on model
     ADJUST_POS: True                  # enable automatic position adjustments based on model type before rendering
     ORTHO_CAM: False                  # enables orthographic-like camera mode for all cameras
     RENDERED_OBJECT:                  # specify part of the model to be used as render object, uses "Object/<name>" or "Collection/<name>" syntax
 
-  BACKGROUNDS:                        # background selection
+  BACKGROUNDS: &default_backgrounds   # background selection
     LIST:                             # name of .blend file from src/pcbooth/templates/backgrounds directory or "transparent"
-      - paper_black                     
-      - transparent                              
+      - paper_black                                          
 
-  CAMERAS:                            # camera selection
-    TOP: False
+  CAMERAS: &default_cameras           # camera selection
+    TOP: True
     ISO: False
     FRONT: False
     LEFT: False
     RIGHT: False
-    PHOTO1: False
+    PHOTO1: True
     PHOTO2: False
     CUSTOM: False
 
-  POSITIONS:                          # model position selection
+  POSITIONS: &default_positions       # model position selection
     TOP: True
     BOTTOM: True
     REAR: False
 
   OUTPUTS:                            # rendering jobs list
-    - STATIC:
-    - FLIPTRANSITION:
 
+_test_settings: &test_settings
+  KEEP_FRAMES: True             
+  SAVE_SCENE: True               
+
+_test_renderer: &test_renderer
+  SAMPLES: 8                      
+  FPS: 10                       
+  IMAGE_WIDTH: 740              
+  IMAGE_HEIGHT: 740             
+
+static_test:
+  <<: *default
+  SETTINGS:
+    <<: *default_settings
+    <<: *test_settings
+  RENDERER:
+    <<: *default_renderer
+    <<: *test_renderer
+  OUTPUTS:
+  - STATIC:
+
+flip_transition_test:
+  <<: *default
+  SETTINGS:
+    <<: *default_settings
+    <<: *test_settings
+  RENDERER:
+    <<: *default_renderer
+    <<: *test_renderer
+  OUTPUTS:
+  - FLIPTRANSITION:
+
+camera_transition_test:
+  <<: *default
+  SETTINGS:
+    <<: *default_settings
+    <<: *test_settings
+  RENDERER:
+    <<: *default_renderer
+    <<: *test_renderer
+  OUTPUTS:
+  - CAMERATRANSITION:
+
+highlights_test:
+  <<: *default
+  SETTINGS:
+    <<: *default_settings
+    <<: *test_settings
+  RENDERER:
+    <<: *default_renderer
+    <<: *test_renderer
+  OUTPUTS:
+  - HIGHLIGHTS:
+
+masks_test:
+  <<: *default
+  SETTINGS:
+    <<: *default_settings
+    <<: *test_settings
+  RENDERER:
+    <<: *default_renderer
+    <<: *test_renderer
+  OUTPUTS:
+  - MASKS:
+
+stackup_test:
+  <<: *default
+  SETTINGS:
+    <<: *default_settings
+    <<: *test_settings
+  RENDERER:
+    <<: *default_renderer
+    <<: *test_renderer
+  OUTPUTS:
+  - STACKUP:
 
     
