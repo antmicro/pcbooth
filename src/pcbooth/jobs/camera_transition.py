@@ -26,6 +26,16 @@ class CameraTransition(pcbooth.core.job.Job):
     def _override_studio(self) -> None:
         if background := Background.get("transparent"):
             self.studio.backgrounds = [background]
+        if self.studio.is_ortho:
+            """
+            Disables Camera transition rendering job when ORTHO_CAM is enabled in config.
+            This is because in current implementation causes excessive camera movement when interpolated due to large focal length.
+            To be fixed in future, possibly by making ORTHO_CAM to enable spawning ortho type cameras instead of perspective ones.
+            """
+            logger.warning(
+                "This job is unavailable for use with ortho-like camera (SCENE/ORTHO_CAM setting is enabled)."
+            )
+            self.studio.cameras = []
 
     def iterate(self) -> None:
         """
@@ -72,12 +82,14 @@ class CameraTransition(pcbooth.core.job.Job):
         # create end camera + focus keyframes
         camera_start.add_keyframe(scene.frame_end)
 
+        # exception for when left to right camera transition is requested
+        if all(
+            cam in ["LEFT", "RIGHT"] for cam in [camera_start.name, camera_end.name]
+        ):
+            if camera_mid := Camera.get("FRONT"):
+                camera_start.object.matrix_world = camera_mid.object.matrix_world.copy()
+
+        # create intermediate frame with camera zoom out
         camera_start.add_intermediate_keyframe(
-            self.studio.rendered_obj, progress=0.2, zoom=1.1
-        )
-        camera_start.add_intermediate_keyframe(
-            self.studio.top_parent, progress=0.5, zoom=1.1
-        )
-        camera_start.add_intermediate_keyframe(
-            self.studio.rendered_obj, progress=0.8, zoom=1.1
+            self.studio.rendered_obj, progress=0.5, zoom_out=1.2
         )

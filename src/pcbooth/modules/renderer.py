@@ -444,6 +444,9 @@ class FFmpegWrapper:
         pattern = r"^.+_\d{4}..+$"
         if config.blendcfg["SETTINGS"]["KEEP_FRAMES"]:
             return
-        for file in listdir(self.render_path):
-            if match(pattern, file):
-                remove_file(self.render_path + file)
+        try:
+            for file in listdir(self.render_path):
+                if match(pattern, file):
+                    remove_file(self.render_path + file)
+        except FileNotFoundError:
+            logger.debug("No frames found to remove.")

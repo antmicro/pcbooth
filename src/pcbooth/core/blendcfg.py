@@ -52,6 +52,14 @@ def parse_data_block_strings(arg: str) -> list[str] | str:
     return arg
 
 
+def parse_focal_ratio_strings(arg: str) -> float | str:
+    """Parse focal ratio string into float."""
+    pattern = r"^[1f]\/\d+$"
+    if match := re.match(pattern, arg):
+        return eval(match.group(0).replace("f", "1"))
+    return arg
+
+
 def parse_strings(arg: str) -> list[str]:
     """Parse string and split into separate values by comma separator."""
     return arg.replace(",", "").split()
@@ -63,6 +71,13 @@ def get_image_formats() -> List[str]:
     return [
         item.identifier for item in formats_dict if "Output image" in item.description
     ]
+
+
+def to_float(arg: str) -> str | float:
+    try:
+        return float(arg)
+    except (ValueError, TypeError):
+        return arg
 
 
 # Schema for blendcfg.yaml file
@@ -90,9 +105,11 @@ CONFIGURATION_SCHEMA = {
     },
     "SCENE": {
         "LIGHTS_COLOR": Field("color"),
-        "LIGHTS_INTENSITY": Field("float"),
-        "HDRI_INTENSITY": Field("float"),
+        "LIGHTS_INTENSITY": Field("float", conv=to_float),
+        "HDRI_INTENSITY": Field("float", conv=to_float),
         "DEPTH_OF_FIELD": Field("bool"),
+        "FOCAL_RATIO": Field("focal_ratio", conv=parse_focal_ratio_strings),
+        "ZOOM_OUT": Field("float", conv=to_float),
         "LED_ON": Field("bool"),
         "ADJUST_POS": Field("bool"),
         "ORTHO_CAM": Field("bool"),
@@ -119,13 +136,15 @@ CONFIGURATION_SCHEMA = {
 }
 
 
-def check_and_copy_blendcfg(file_path: str, pnb_path: str, force: bool = False) -> None:
+def check_and_copy_blendcfg(
+    file_path: str, pcbt_path: str, force: bool = False
+) -> None:
     """Copy blendcfg to project's directory."""
     if not os.path.exists(file_path + BLENDCFG_FILENAME) or force:
         prompt = "enforced copy" if force else "no config found in working directory"
         logger.warning(f"Copying default config from template ({prompt})")
         copyfile(
-            pnb_path + "/templates/" + BLENDCFG_FILENAME, file_path + BLENDCFG_FILENAME
+            pcbt_path + "/templates/" + BLENDCFG_FILENAME, file_path + BLENDCFG_FILENAME
         )
 
 
@@ -147,6 +166,18 @@ def is_color_preset(arg: str | list[str] | None) -> bool:
     if arg in presets:
         return True
     if is_color(arg):
+        return True
+    return False
+
+
+def is_focal_ratio(arg: str | list[str] | None) -> bool:
+    """Check if given string represents focal ratio fraction or allowed keyword."""
+    if arg is None:
+        return False
+    presets = ["auto"]  # allowed keywords
+    if arg in presets:
+        return True
+    if type(arg) == float:
         return True
     return False
 
@@ -235,6 +266,7 @@ def check_throw_error(cfg: Dict[str, Any], args: list[str], schema: Field) -> No
     )
     image_file_format_err = f"{val} is not a valid Blender image output format, must be one of {get_image_formats()}"
     video_file_format_err = f"{val} is not a supported video output format, must be one of {['AVI', 'MP4', 'MPEG', 'WEBM', 'GIF']}"
+    focal_ratio_err = f"{val} is not a valid focal ratio, must be a fraction like '1/4' or 'f/4', float or 'auto'"
 
     match schema.type:
         case "color":
@@ -244,9 +276,11 @@ def check_throw_error(cfg: Dict[str, Any], args: list[str], schema: Field) -> No
         case "int":
             assert isinstance(val, int), not_schema_type_err
         case "float":
-            assert isinstance(val, float), not_schema_type_err
+            assert isinstance(val, (int, float)), not_schema_type_err
         case "color_preset":
             assert is_color_preset(val), color_type_err + " or presets"
+        case "focal_ratio":
+            assert is_focal_ratio(val), focal_ratio_err
         case "tuple":
             assert isinstance(val, tuple), not_schema_type_err
         case "string":
@@ -319,10 +353,10 @@ def check_and_parse_blendcfg(cfg: Dict[str, Any]) -> Dict[str, Any]:
     return cfg
 
 
-def open_blendcfg(path: str, config_preset: str, pnb_path: str) -> Dict[str, Any]:
+def open_blendcfg(path: str, config_preset: str, pcbt_path: str) -> Dict[str, Any]:
     """Open configuration file from the specified path."""
     cfg_path = path + "/" + BLENDCFG_FILENAME
-    template_path = pnb_path + "/templates/" + BLENDCFG_FILENAME
+    template_path = pcbt_path + "/templates/" + BLENDCFG_FILENAME
     config = hiyapyco.load([template_path, cfg_path], method=hiyapyco.METHOD_MERGE)
     if config_preset not in config:
         raise RuntimeError(f"Unknown blendcfg preset: {config_preset}")

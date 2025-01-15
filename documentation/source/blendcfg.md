@@ -156,13 +156,28 @@ Configuration of rendered object:
 ### `OUTPUTS`
 List of render jobs to be executed with `PCBooth`. The module names are followed by a _:_, for example:
 
-```
+```yaml
 OUTPUTS:
     - STATIC:
     - FLIP_TRANSITIONS:
 ```
 
-To learn how rendering job names from blendcfg.yaml are translated to Python modules for execution, see the [Rendering jobs](#jobs.md) chapter.
+Some rendering jobs support additional job-specific parameters. 
+They can be passed in the config using the following syntax:
+
+```yaml
+OUTPUTS:
+    - MASKS:
+        FULL: True
+        COVERED: False
+        HIGHLIGHTED: ["U", "A", "J"]
+    - STATIC:
+    ...
+```
+
+```{note}
+To learn how to create your own rendering jobs, see the [Rendering jobs](#jobs.md) chapter.
+```
 
 ## Custom config settings
 

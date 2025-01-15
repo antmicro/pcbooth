@@ -1,6 +1,6 @@
 """Module containing utility functions for rendering jobs."""
 
-from typing import Generator, List, Callable, Optional, Any
+from typing import Generator, List, Callable, Optional, Any, Set
 import bpy
 from contextlib import contextmanager
 from pcbooth.modules.renderer import (
@@ -14,12 +14,15 @@ from mathutils import Vector, Euler
 
 @contextmanager
 def holdout_override(
-    components: List[bpy.types.Object], unobstructed: bool = False
+    components: List[bpy.types.Object] | Set[bpy.types.Object],
+    full: bool = False,
 ) -> Generator[None, Any, None]:
     """Apply holdout override for components from provided list. If non_obstructed"""
     try:
-        if unobstructed:
+        if full:
             for component in bpy.data.objects:
+                if component.library:
+                    continue
                 component.hide_render = True
         for component in components:
             component.is_holdout = True
@@ -29,14 +32,19 @@ def holdout_override(
         pass
     finally:
         for component in bpy.data.objects:
+            if component.library:
+                continue
             component.hide_render = False
         for component in components:
+            if component.library:
+                continue
             component.is_holdout = False
 
 
 @contextmanager
 def hide_override(
-    components: List[bpy.types.Object], hide_viewport: bool = False
+    components: List[bpy.types.Object] | Set[bpy.types.Object],
+    hide_viewport: bool = False,
 ) -> Generator[None, Any, None]:
     """Apply hide from render override for components from provided list."""
     try:
@@ -77,7 +85,7 @@ def global_material_override(
 @contextmanager
 def material_override(
     base_material: bpy.types.Material,
-    components: List[bpy.types.Object],
+    components: List[bpy.types.Object] | Set[bpy.types.Object],
 ) -> Generator[None, Any, None]:
     """
     Override all materials with the specified one for all components in the list.
@@ -90,6 +98,12 @@ def material_override(
         for component in backup.keys():
             if component.library:
                 continue
+            if (
+                hasattr(component.data, "materials")
+                and len(component.material_slots) == 0
+            ):
+                component.data.materials.append(base_material)
+                continue
             for slot in component.material_slots:
                 slot.material = base_material
         yield
@@ -100,12 +114,17 @@ def material_override(
         for component, materials in backup.items():
             if component.library:
                 continue
+            if hasattr(component.data, "materials") and len(materials) == 0:
+                component.data.materials.clear()
+                continue
             for i in range(len(materials)):
                 component.material_slots[i].material = materials[i]
 
 
 @contextmanager
-def compositing_override(compositing_func: Callable) -> Generator[None, Any, None]:
+def compositing_override(
+    compositing_func: Callable[..., None]
+) -> Generator[None, Any, None]:
     """Apply compositor override."""
     try:
         compositing_func()
@@ -117,7 +136,7 @@ def compositing_override(compositing_func: Callable) -> Generator[None, Any, Non
 
 
 @contextmanager
-def cycles_override(settings_func: Callable) -> Generator[None, Any, None]:
+def cycles_override(settings_func: Callable[..., None]) -> Generator[None, Any, None]:
     """Apply Cycles settings override."""
     try:
         settings_func()
@@ -129,7 +148,9 @@ def cycles_override(settings_func: Callable) -> Generator[None, Any, None]:
 
 
 @contextmanager
-def shadow_override(components: List[bpy.types.Object]) -> Generator[None, Any, None]:
+def shadow_override(
+    components: List[bpy.types.Object] | Set[bpy.types.Object],
+) -> Generator[None, Any, None]:
     """Override object visibility to shadow rays."""
     try:
         for component in components:
@@ -144,7 +165,7 @@ def shadow_override(components: List[bpy.types.Object]) -> Generator[None, Any, 
 
 @contextmanager
 def position_override(
-    components: List[bpy.types.Object],
+    components: List[bpy.types.Object] | Set[bpy.types.Object],
     position_func: Callable[[List[bpy.types.Object]], None],
     rendered_obj: Optional[bpy.types.Object] = None,
 ) -> Generator[None, Any, None]:
@@ -154,7 +175,7 @@ def position_override(
     light will be adjusted to the updated model position as well.
     """
     try:
-        position_func(components)
+        position_func(list(components))
         if rendered_obj:
             Light.update_position(rendered_obj)
             Background.update_position(rendered_obj)

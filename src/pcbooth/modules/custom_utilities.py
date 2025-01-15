@@ -6,6 +6,7 @@ from math import radians
 import logging
 from typing import List, Optional
 import re
+from pcbooth.modules.bounding_box import Bounds
 
 logger = logging.getLogger(__name__)
 
@@ -164,16 +165,29 @@ def hex_to_rgb(hex_number: str) -> tuple[float, ...]:
 
 
 def add_empty(
-    name: str, target_coll: Optional[bpy.types.Collection] = None
+    name: str,
+    target_coll: Optional[bpy.types.Collection] = None,
+    children: List[bpy.types.Object] = [],
 ) -> bpy.types.Object:
     """
     Add empty object to the scene. If no target collection is specified, link to root scene collection.
+    Object is placed in children bbox center (or [0,0,0] if no children present).
+    Children are linked to created object
     """
     object = bpy.data.objects.new(name, None)
     if target_coll:
         link_obj_to_collection(object, target_coll)
     else:
         bpy.context.scene.collection.objects.link(object)
+
+    try:
+        with Bounds(children) as target:
+            set_origin(target.bounds)
+            object.location = target.bounds.location.copy()
+        parent_list_to_object(children, object)
+    except RuntimeError:
+        # No vertices found
+        pass
     return object
 
 

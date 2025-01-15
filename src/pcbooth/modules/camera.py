@@ -21,8 +21,8 @@ class Camera:
         "TOP": (radians(0), radians(0), radians(0)),
         "ISO": (radians(54.736), radians(0), radians(45)),
         "FRONT": (radians(30), radians(0), radians(0)),
-        "LEFT": (radians(190), radians(-156), radians(-197)),
-        "RIGHT": (radians(200), radians(-205), radians(-155)),
+        "LEFT": (radians(190), radians(-155), radians(-200)),
+        "RIGHT": (radians(190), radians(-200), radians(-155)),
         "PHOTO1": (radians(38), radians(0), radians(13)),
         "PHOTO2": (radians(60), radians(0), radians(20)),
     }
@@ -78,18 +78,24 @@ class Camera:
             object.rotation_euler = rotation
         cu.link_obj_to_collection(object, Camera.collection)
 
-        logger.debug(f"Added camera object: {object.name} at {object.rotation_euler}")
+        logger.debug(
+            f"Added camera object: {object.name} at {object.rotation_euler}, {object.location}"
+        )
         Camera.objects.append(self)
         return object
 
     def _set_defaults(self) -> None:
         """Set default camera properties"""
         self.object.data.type = "PERSP"  # type: ignore
-        self.object.data.lens = 2000 if config.blendcfg["SCENE"]["ORTHO_CAM"] else 105  # type: ignore
+        self.object.data.lens = 1000 if config.blendcfg["SCENE"]["ORTHO_CAM"] else 105  # type: ignore
         self.object.data.clip_start = 0.1  # type: ignore
         self.object.data.clip_end = 15000  # type: ignore # set long clip end for renders
         if config.blendcfg["SCENE"]["DEPTH_OF_FIELD"]:
             self.object.data.dof.use_dof = True  # type: ignore
+        self._sensor_default: float = 36.0
+        self._sensor_zoomedout: float = (
+            config.blendcfg["SCENE"]["ZOOM_OUT"] * self._sensor_default
+        )
 
     def save_position(self, key: str) -> None:
         """
@@ -131,62 +137,66 @@ class Camera:
         self.object.data.dof.aperture_fstop = self.focuses[key][1]  # type: ignore
         logger.debug(f"Changed focus of {self.object.name} to '{key}' position.")
 
-    def frame_selected(
-        self,
-        object: bpy.types.Object,
-        zoom: float = 1.05,
-    ) -> None:
+    def frame_selected(self, object: bpy.types.Object) -> None:
         """
         Align selected camera to frame all rendered objects.
-        Applies zoom afterwards (zoom < 1 - zoom in, zoom > 1 - zoom out).
-        TBD: add zoom to blendcfg?
+        Applies zoom out afterwards (zoom_out < 1 - zoom in, zoom_out > 1 - zoom out).
         """
+        self.object.data.sensor_width = self._sensor_default  # type: ignore
         cu.select_all(object)
         bpy.context.scene.camera = self.object
         bpy.ops.view3d.camera_to_view_selected()
         bpy.ops.object.select_all(action="DESELECT")
-        self.object.location *= zoom
+        self.object.data.sensor_width = self._sensor_zoomedout  # type: ignore
+
         cu.update_depsgraph()
 
         logger.debug(f"frame_selected function used for {self.object.name}")
 
-    def set_focus(
-        self,
-        target: Bounds,
-        focal_ratio: float = 0.0625,
-    ) -> None:
+    def set_focus(self, object: bpy.types.Object) -> None:
         """
         Calculate focus distance based on the distance between camera and rendered object.
         Apply focal ratio.
         """
-        cu.set_origin(target.bounds)
+        cu.set_origin(object)
         self.object.data.dof.focus_distance = abs(  # type: ignore
-            (target.bounds.location - self.object.location).length
+            (object.location - self.object.location).length
         )
-        self.object.data.dof.aperture_fstop = focal_ratio  # type: ignore
+        cfg_f_ratio = config.blendcfg["SCENE"]["FOCAL_RATIO"]
+        self.object.data.dof.aperture_fstop = (  # type: ignore
+            self._calculate_focal_ratio() if cfg_f_ratio == "auto" else cfg_f_ratio
+        )
         logger.debug(f"set_focus function used for {self.object.name}")
 
-    def align(self, rendered_obj: bpy.types.Object, target: Bounds, **kwargs) -> None:
+    def _calculate_focal_ratio(self) -> float:
+        """
+        Calculate focal ratio relative to focus distance.
+        Multiplier can be adjusted to control the blur (higher values result in sharper image).
+        """
+        multiplier = 9.5
+        focal_ratio = (
+            1
+            / self.object.data.dof.focus_distance  # type: ignore
+            * multiplier
+            * (10 if config.blendcfg["SCENE"]["ORTHO_CAM"] else 1)
+        )
+
+        logger.debug(f"Calculated focal ratio: {focal_ratio}")
+        return focal_ratio
+
+    def align(self, object: bpy.types.Object, target: Bounds) -> None:
         """
         Align camera to all rendered objects and then recalculate focus distance.
-        Args:
-            rendered_obj: bpy.types.Object
-            target: Bounds
-            focal_ratio: float = 0.0625
-            zoom: float = 1.05
         """
-        set_focus_args = {
-            key: kwargs[key] for key in ["target", "focal_ratio"] if key in kwargs
-        }
-        frame_selected_args = {
-            key: kwargs[key] for key in ["rendered_obj", "zoom"] if key in kwargs
-        }
-
-        self.frame_selected(rendered_obj, **frame_selected_args)
-        self.set_focus(target, **set_focus_args)
+        self.frame_selected(object)
+        self.set_focus(target.bounds)
 
     def add_keyframe(
-        self, frame: int, translations: bool = True, focus: bool = True
+        self,
+        frame: int,
+        translations: bool = True,
+        focus: bool = True,
+        zoom_out: bool = True,
     ) -> None:
         """
         Add keyframe operation to be performed after changing camera position and/or focus.
@@ -195,6 +205,8 @@ class Camera:
         if translations:
             self.object.keyframe_insert(data_path="rotation_euler", frame=frame)
             self.object.keyframe_insert(data_path="location", frame=frame)
+        if zoom_out:
+            self.object.data.keyframe_insert(data_path="sensor_width", frame=frame)
         if focus:
             self.object.data.dof.keyframe_insert(  # type: ignore
                 data_path="focus_distance", frame=frame
@@ -204,7 +216,11 @@ class Camera:
             )
 
     def add_intermediate_keyframe(
-        self, rendered_obj: bpy.types.Object, progress: float, zoom: float = 1.0
+        self,
+        rendered_obj: bpy.types.Object,
+        progress: float,
+        zoom_out: float = 1.0,
+        frame_selected: bool = True,
     ) -> None:
         """
         Insert intermediate keyframes for the camera at a specified fraction of the animation timeline, aligning it with the rendered object.
@@ -214,12 +230,18 @@ class Camera:
         scene = bpy.context.scene
 
         scene.frame_set(int(scene.frame_end * progress))
-        self.frame_selected(rendered_obj)
-        self.object.location *= zoom
-        self.object.keyframe_insert(
-            data_path="rotation_euler", frame=scene.frame_current
+        if frame_selected:
+            self.frame_selected(rendered_obj)
+
+        self.object.data.sensor_width = self._sensor_zoomedout * zoom_out  # type: ignore
+
+        if config.blendcfg["SCENE"]["ORTHO_CAM"]:
+            self.set_focus(rendered_obj)
+
+        self.add_keyframe(
+            scene.frame_current,
+            focus=config.blendcfg["SCENE"]["ORTHO_CAM"],
         )
-        self.object.keyframe_insert(data_path="location", frame=scene.frame_current)
 
     @contextmanager
     def dof_override(self) -> Generator[None, Any, None]:

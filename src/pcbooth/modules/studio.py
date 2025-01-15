@@ -37,6 +37,7 @@ class Studio:
         self.is_pcb: bool = False
         self.is_collection: bool = False
         self.is_object: bool = False
+        self.is_ortho: bool = config.blendcfg["SCENE"]["ORTHO_CAM"]
         self.rendered_obj: bpy.types.Object
         self.top_parent: bpy.types.Object
         self.display_rot: int = 0
@@ -74,9 +75,9 @@ class Studio:
                 )
         for position, _ in Studio.presets.items():
             self.change_position(position)
-            with Bounds(cu.select_all(self.rendered_obj)) as bounds:
+            with Bounds(cu.select_all(self.rendered_obj)) as target:
                 for camera in Camera.objects:
-                    camera.align(self.rendered_obj, bounds)
+                    camera.align(self.rendered_obj, target)
                     camera.save_position(position)
                     camera.save_focus(position)
 
@@ -103,6 +104,10 @@ class Studio:
 
         cfg_bgs = config.blendcfg["BACKGROUNDS"]["LIST"]
         self.backgrounds = [bg for bg in Background.objects if bg.name in cfg_bgs]
+        if missing_bgs := [
+            bg for bg in cfg_bgs if bg not in {bg.name for bg in self.backgrounds}
+        ]:
+            logger.warning("No such background: %s", missing_bgs)
 
     def _add_lights(self) -> None:
         Light.add_collection()
@@ -179,10 +184,11 @@ class Studio:
         scene_components = [object for object in bpy.data.objects]
         rendered_components = [object for object in rendered_col.objects]
         self._get_top_bottom_components(rendered_components)
-        self.top_parent = cu.add_empty("_parent")
-        self.rendered_obj = cu.add_empty("_rendered_parent")
-        cu.parent_list_to_object(rendered_components, self.rendered_obj)
-        cu.parent_list_to_object(scene_components, self.top_parent)
+        self.rendered_obj = cu.add_empty(
+            "_rendered_parent", children=rendered_components
+        )
+        self.top_parent = cu.add_empty("_parent", children=scene_components)
+        cu.parent_list_to_object([self.rendered_obj], self.top_parent)
 
     def _configure_as_singleobject(self, object_name: str) -> None:
         self.is_object = True
@@ -191,16 +197,16 @@ class Studio:
             raise RuntimeError(
                 f"{object_name} object could not be found in Blender model data."
             )
-        self._get_top_bottom_components([self.rendered_obj])
-        self.top_parent = cu.get_top_parent(self.rendered_obj)
+        scene_components = [object for object in bpy.data.objects]
+        self._get_top_bottom_components()
+        self.top_parent = cu.add_empty("_parent", children=scene_components)
         cu.set_origin(self.rendered_obj)  # needed to correctly calculate focus
 
     def _configure_as_unknown(self) -> None:
-        self.top_parent = cu.add_empty("_parent")
+        scene_components = [object for object in bpy.data.objects]
+        self.top_parent = cu.add_empty("_parent", children=scene_components)
         self.rendered_obj = self.top_parent
-        components = [object for object in bpy.data.objects]
-        self._get_top_bottom_components(components)
-        cu.parent_list_to_object(components, self.top_parent)
+        self._get_top_bottom_components(scene_components)
 
     def _configure_position(self) -> None:
         """
@@ -235,12 +241,18 @@ class Studio:
             for comp in components.objects:
                 if "PCB_Side" not in comp.keys():  # type: ignore
                     continue
+                if comp.library:
+                    continue
                 if comp["PCB_Side"] == "T":
                     top_comps.append(comp)
                 elif comp["PCB_Side"] == "B":
                     bot_comps.append(comp)
         else:
-            top_comps = [obj for obj in objects if not obj.name.startswith("_")]
+            top_comps = [
+                obj
+                for obj in objects
+                if not obj.name.startswith("_") and not obj.library
+            ]
             bot_comps = top_comps.copy()
         logger.debug(f"Read top components: {top_comps}")
         logger.debug(f"Read bot components: {bot_comps}")

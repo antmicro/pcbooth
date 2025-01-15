@@ -14,7 +14,7 @@ name = "pcbooth"
 # the tag. Only create tags for commits that won't be modified
 # anymore (i.e, main branch).
 version = "0.0.0"
-description = "Studio and render generator"
+description = "Blender scene and render generator"
 authors = ["Antmicro <contact@antmicro.com>"]
 license = "Apache-2.0"
 readme = "README.md"
@@ -35,6 +35,7 @@ python = "3.11.*"
 pyyaml = "^6.0.1"
 bpy = "4.1"
 HiYaPyCo = "0.1.0"
+pydantic = "2.10.5"
 
 [tool.poetry-dynamic-versioning]
 enable = true

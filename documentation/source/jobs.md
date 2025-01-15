@@ -78,6 +78,40 @@ class MyRenderingJob(pcbooth.core.job.Job):
 This method will now override values read from config for your specific job only. 
 Other jobs will run with the lists parsed from blendcfg.yaml unless they have their own overrides added.
 
+### Passing job-specific parameters in the config
+
+You can run rendering jobs with additional parameters defined in the config file.
+To enable them, override the `ParameterSchema(BaseModel)` class in your rendering job and define your parameter types and default values as follows:
+
+```python
+  from pydantic import BaseModel
+  
+  ...
+  
+  class ParameterSchema(BaseModel):
+      """
+      Pydantic schema class for optional job parameters.
+      Overwrite this in deriving classes to add their own parameters.
+      """
+
+      PARAMETER1: bool = True
+      PARAMETER2: int = 0
+      PARAMETER3: List[str] = ["FOO", "BAR"]
+```
+
+Parameters are parsed and converted with use of this schema, so that only the valid ones get passed to the rendering job. Enabled parameters will be printed to console in the rendering job report:
+
+```
+[14:24:20] [pcbooth.core.job] (INFO) ### MASKS rendering job
+[14:24:20] [pcbooth.core.job] (INFO) 	* enabled rendered object positions: TOP, BOTTOM
+[14:24:20] [pcbooth.core.job] (INFO) 	* enabled cameras: FRONT, PHOTO1
+[14:24:20] [pcbooth.core.job] (INFO) 	* enabled backgrounds: paper_black
+[14:24:20] [pcbooth.core.job] (INFO) 	* enabled parameters: FULL=False, COVERED=True, HIGHLIGHTED=['A', 'J', 'PS', 'T', 'U', 'IC', 'POT']
+[14:24:20] [pcbooth.core.job] (INFO) Total renders: 62
+```
+
+In the rendering job module code, you can you can access parameters using `self.params.get(<parameter name>)`.
+
 ### Using the `RendererWrapper` and `FFmpegWrapper`
 
 `RendererWrapper` and `FFmpegWrapper` are classes handling saving render results and sequencing them into animations. 

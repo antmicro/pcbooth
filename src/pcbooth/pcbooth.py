@@ -23,10 +23,10 @@ def parse_args() -> argparse.Namespace:
     formatter = lambda prog: argparse.HelpFormatter(prog, max_help_position=35)
 
     parser = argparse.ArgumentParser(
-        prog="kbe",
+        prog="PCBooth",
         prefix_chars="-",
         formatter_class=formatter,
-        description="kbe - script used to provide PCB 3D models and renders from PCB production files. Program must be run in project workdir.",
+        description="PCBooth - Blender scene and render generator.",
     )
     parser.add_argument(
         "-d",
@@ -54,7 +54,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-g",
         "--get-config",
-        help="Copy blendcfg.yaml to CWD and exit",
+        help="copy blendcfg.yaml to CWD and exit",
         action="store_true",
     )
 
@@ -110,8 +110,8 @@ def create_modules(config: list[dict[Any, Any]]) -> list[pcbooth.core.job.Job]:
         sys.exit(1)
     logger.debug("Execution plan:")
     for v in config:
-        name = next(iter(v))
-        logger.debug("Job %s:", name)
+        name, params = next(iter(v.items()))
+        logger.debug("- job: %s (params: %s)", name, params)
 
         # Find a class that matches the module name
         class_type = find_module(name)
@@ -124,7 +124,7 @@ def create_modules(config: list[dict[Any, Any]]) -> list[pcbooth.core.job.Job]:
         # We got a type, we can now create the object
         # This is just a constructor call
         try:
-            module = class_type()
+            module = class_type(params)
             runnable_modules.append(module)
         except Exception as e:
             raise RuntimeError(f"Failed to create module {name}: {str(e)}") from e

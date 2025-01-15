@@ -7,7 +7,7 @@ import pcbooth.modules.custom_utilities as cu
 import pcbooth.modules.job_utilities as ju
 import logging
 
-from typing import Generator, List, Tuple, Dict, Any
+from typing import Tuple, Set
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ class Highlights(pcbooth.core.job.Job):
     """
 
     def _override_studio(self) -> None:
-        if background := Background.get("paper_white"):
+        if background := Background.get("transparent"):
             self.studio.backgrounds = [background]
         self.studio.positions = ["TOP", "BOTTOM"]
 
@@ -49,7 +49,6 @@ class Highlights(pcbooth.core.job.Job):
         total_renders = (
             len(highlighted)
             * len(self.studio.cameras)
-            * (1 if self.studio.is_pcb else 2)
             * (1 if self.studio.is_pcb else 2)
         )
         self.update_status(total_renders)
@@ -91,25 +90,26 @@ class Highlights(pcbooth.core.job.Job):
 
     def get_component_lists(
         self,
-    ) -> Tuple[List[bpy.types.Object], List[bpy.types.Object]]:
+    ) -> Tuple[Set[bpy.types.Object], Set[bpy.types.Object]]:
         """
         Get list of components to highlight (HIGHLIGHTED list of designators or all components present if not PCB) and
         list of components to hide (HIDDEN list of designators and all linked objects).
         """
-        rendered = list(
+        rendered = set(
             dict.fromkeys(self.studio.top_components + self.studio.bottom_components)
         )
-        highlighted = [
-            component
-            for component in rendered
-            if is_highlighted(component, self.studio.is_pcb)
-        ]
-        linked = [object for object in cu.get_linked() if not is_background(object)]
-        hidden = [
+        linked = {object for object in cu.get_linked() if not is_background(object)}
+        hidden = {
             component
             for component in rendered
             if is_hidden(component, self.studio.is_pcb)
-        ] + linked
+        } | linked
+        highlighted = {
+            component
+            for component in rendered
+            if is_highlighted(component, self.studio.is_pcb)
+        } - hidden
+
         if not highlighted:
             logger.warning("No highlighted components found!")
         return highlighted, hidden
@@ -147,11 +147,8 @@ def is_hidden(object: bpy.types.Object, is_pcb: bool = True) -> bool:
     """
     Check if component is supposed to be hidden.
     Compares with HIDDEN list of designators.
-    If model is linked, always returns True.
     If model is not PCB type, always returns False.
     """
-    if object.library:
-        return True
     if not is_pcb:
         return False
     designator = cu.get_designator(object)
@@ -168,8 +165,6 @@ def add_material(name: str, rgb: str) -> bpy.types.Material:
 
 
 def set_material(object: bpy.types.Object, material: bpy.types.Material) -> None:
-    """Sets provided material in all material slots of an object. Skips linked objects."""
-    if object.library:
-        return
+    """Sets provided material in all material slots of an object."""
     for slot in object.material_slots:
         slot.material = material

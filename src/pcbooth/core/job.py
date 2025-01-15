@@ -6,7 +6,8 @@ from abc import ABC, abstractmethod
 from pcbooth.modules.studio import Studio
 from pcbooth.modules.custom_utilities import clear_animation_data
 from copy import copy
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -14,11 +15,20 @@ logger = logging.getLogger(__name__)
 class Job(ABC):
     """Represents a single module of the pipeline, for example: transition."""
 
-    def __init__(self) -> None:
+    class ParameterSchema(BaseModel):
+        """
+        Optional job parameters pydantic schema class.
+        Overwrite this in deriving classes to add their own parameters.
+        """
+
+        pass
+
+    def __init__(self, params: Dict[str, Any]) -> None:
         self._iter: int = 0
         self._total: int = 1
         self.studio: Studio
         self._actions_backup: List[bpy.types.Action] = []
+        self.params = self._get_params(params)
 
     def execute(self, studio: Studio) -> None:
         """Execute the current module.
@@ -37,6 +47,10 @@ class Job(ABC):
         self._iter = 0
         self.studio = copy(studio)
         self._override_studio()
+        if self.studio.__dict__ != studio.__dict__:
+            logger.warning(
+                f"Studio components from config will be overriden with values defined in {type(self).__name__.upper()}!"
+            )
 
     def _override_studio(self) -> None:
         """
@@ -46,6 +60,18 @@ class Job(ABC):
         self.studio.backgrounds = [Background.get("transparent")]
         """
         pass
+
+    def _get_params(self, arg: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Get optional parameters passed with rendering job list config file and validate them using Schema class.
+        Missing parameters are filled with default values.
+        """
+        try:
+            params = dict(self.ParameterSchema(**arg))
+        except TypeError:
+            params = dict(self.ParameterSchema())
+        logger.debug(f"Parsed rendering job parameters: {params}")
+        return params
 
     @abstractmethod
     def iterate(self) -> None:
@@ -73,11 +99,15 @@ class Job(ABC):
         """Print job name and enabled Studio items to be used in the job."""
         logger.info(f"### {type(self).__name__.upper()} rendering job")
 
-        items = {
-            "rendered object positions": self.studio.positions,
-            "cameras": ([camera.name for camera in self.studio.cameras]),
-            "backgrounds": ([bg.name for bg in self.studio.backgrounds]),
+        items: Dict[str, Any] = {
+            "rendered object positions": ", ".join(self.studio.positions),
+            "cameras": (", ".join([camera.name for camera in self.studio.cameras])),
+            "backgrounds": (", ".join([bg.name for bg in self.studio.backgrounds])),
         }
+        if self.params:
+            items["parameters"] = ", ".join(
+                f"{key}={value}" for key, value in self.params.items()
+            )
 
         for item, value in items.items():
             if value:

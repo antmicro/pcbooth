@@ -94,10 +94,16 @@ This module handles fast rendering of static images of each component in a model
 These images can act as binary masks, enabling precise identification of the component's location within a full-color render. 
 Masks are rendered for each camera in each model position specified in config.
 
-Yields renders to the <RENDER_DIR>/masks/<camera name><position initial>/ directory. Filename is determined based on model type:
+Yields renders to the <RENDER_DIR>/masks/<full/covered>/<camera name><position initial>/ directory. Filename is determined based on model type:
 
     * for PCBs, designator of the rendered component is used as name
     * for other types of model, full rendered object name is used
+
+This rendering job supports the following additional parameters:
+
+    * `FULL` - boolean switch, enables mask renders as full component silhouette
+    * `COVERED` - boolean switch, enables mask renders as components partially obscured by other components
+    * `HIGHLIGHTED` - list of strings to restrict components rendered by specified designators (PCB type model only) 
 
 ```{figure} img/masks.png
 :align: center

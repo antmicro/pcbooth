@@ -1,6 +1,6 @@
 default: &default
   SETTINGS: &default_settings
-    PRJ_EXTENSION: .kicad_pro         # default extension of project based on which kbe generates name of .blend
+    PRJ_EXTENSION: .kicad_pro         # default extension of project for PCBooth to source .blend filename from
     FAB_DIR: fab                      # default directory name containing fabrication files
     RENDER_DIR: blender_renders       # default directory name for storing renders
     ANIMATION_DIR: assets/previews    # default directory name for storing sequenced animations
@@ -27,17 +27,19 @@ default: &default
     LIGHTS_INTENSITY: 1.0             # area lights intensity float multiplier, set to 0.0 to disable area lights
     HDRI_INTENSITY: 0.5               # HDRI background intensity float multiplier, set to 0.0 to disable HDRI 
     DEPTH_OF_FIELD: True              # enable depth of field for all cameras
+    FOCAL_RATIO: auto                 # cameras' focal ratio for depth of field effect, (accepts fractions like f/4, 1/4 or floats, type "auto" for calculated value)
+    ZOOM_OUT: 1.05                    # cameras' zoom applied when framing rendered object (zoom_out < 1.0 - zoom in, zoom_out > 1.0 - zoom out)
     LED_ON: True                      # enable light emitting shaders on model
     ADJUST_POS: True                  # enable automatic position adjustments based on model type before rendering
     ORTHO_CAM: False                  # enables orthographic-like camera mode for all cameras
     RENDERED_OBJECT:                  # specify part of the model to be used as render object, uses "Object/<name>" or "Collection/<name>" syntax
 
   BACKGROUNDS: &default_backgrounds   # background selection
-    LIST:                             # name of .blend file from src/pcbooth/templates/backgrounds directory or "transparent"
-      - paper_black                                          
-
+    LIST:                             # name of .blend file from src/pcbooth/templates/backgrounds directory or "transparent"                                         
+      - paper_black
+      
   CAMERAS: &default_cameras           # camera selection
-    TOP: True
+    TOP: False
     ISO: False
     FRONT: False
     LEFT: False

@@ -148,7 +148,7 @@ class Light:
         }
 
     @classmethod
-    def update_position(cls, object: bpy.types.Object, restore: bool = False):
+    def update_position(cls, object: bpy.types.Object, restore: bool = False) -> None:
         """Update position (Z coordinate) of all added lights in relation to current highest point of rendered object"""
         if restore:
             for lt in cls.objects:

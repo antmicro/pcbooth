@@ -3,7 +3,10 @@ import pcbooth.core.job
 from pcbooth.modules.background import Background
 from pcbooth.modules.camera import Camera
 from pcbooth.modules.renderer import FFmpegWrapper, RendererWrapper
+from pcbooth.modules.custom_utilities import clear_animation_data
 import logging
+from itertools import combinations
+from typing import Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +27,6 @@ class FlipTransition(pcbooth.core.job.Job):
     def _override_studio(self) -> None:
         if background := Background.get("transparent"):
             self.studio.backgrounds = [background]
-        self.studio.positions = ["TOP", "BOTTOM"]
 
     def iterate(self) -> None:
         """
@@ -33,48 +35,52 @@ class FlipTransition(pcbooth.core.job.Job):
         ffmpeg = FFmpegWrapper()
         renderer = RendererWrapper()
         Background.use(self.studio.backgrounds[0])
-        total_renders = len(self.studio.cameras)
+        pairs = list(combinations(self.studio.positions, 2))
+        total_renders = len(pairs) * len(self.studio.cameras)
         self.update_status(total_renders)
-        self.create_model_keyframes()
-        for camera in self.studio.cameras:
-            filename = f"{camera.name.lower()}T_{camera.name.lower()}B"
-            rev_filename = f"{camera.name.lower()}B_{camera.name.lower()}T"
-            self.create_camera_keyframes(camera)
-            renderer.render_animation(camera.object, filename)
-            ffmpeg.run(filename, filename)
-            ffmpeg.reverse(filename, rev_filename)
-            self.update_status()
+
+        for pair in pairs:
+            self.create_model_keyframes(pair)
+            for camera in self.studio.cameras:
+                pos_start = pair[0]
+                pos_end = pair[1]
+
+                filename = f"{camera.name.lower()}{pos_start[0]}_{camera.name.lower()}{pos_end[0]}"
+                rev_filename = f"{camera.name.lower()}{pos_end[0]}_{camera.name.lower()}{pos_start[0]}"
+                self.create_camera_keyframes(camera, pair)
+                renderer.render_animation(camera.object, filename)
+                ffmpeg.run(filename, filename)
+                ffmpeg.reverse(filename, rev_filename)
+                self.update_status()
+            clear_animation_data()
         ffmpeg.clear_frames()
 
-    def create_model_keyframes(self) -> None:
+    def create_model_keyframes(self, pair: Tuple[str, str]) -> None:
         scene = bpy.context.scene
 
         # create rendered object keyframes
-        self.studio.change_position("TOP")
-        self.studio.rendered_obj.keyframe_insert(
+        self.studio.change_position(pair[0])
+        self.studio.top_parent.keyframe_insert(
             data_path="rotation_euler", frame=scene.frame_start
         )
 
-        self.studio.change_position("BOTTOM")
-        self.studio.rendered_obj.keyframe_insert(
+        self.studio.change_position(pair[1])
+        self.studio.top_parent.keyframe_insert(
             data_path="rotation_euler", frame=scene.frame_end
         )
 
-    def create_camera_keyframes(self, camera: Camera) -> None:
+    def create_camera_keyframes(self, camera: Camera, pair: Tuple[str, str]) -> None:
         scene = bpy.context.scene
 
-        # create start camera + focus keyframes
-        camera.change_position("TOP")
+        # create start camera keyframes
+        camera.change_position(pair[0])
         camera.add_keyframe(scene.frame_start)
 
-        camera.add_intermediate_keyframe(
-            self.studio.rendered_obj, progress=0.3, zoom=1.4
-        )
-        # camera.add_intermediate_keyframe(self.studio.rendered_obj, progress=0.5, zoom=1.4)
-        camera.add_intermediate_keyframe(
-            self.studio.rendered_obj, progress=0.7, zoom=1.4
-        )
-
-        # create end camera + focus keyframes
-        camera.change_position("BOTTOM")
+        # create end camera keyframes
+        camera.change_position(pair[1])
         camera.add_keyframe(scene.frame_end)
+
+        # create intermediate frame with camera zoom out
+        camera.add_intermediate_keyframe(
+            self.studio.top_parent, progress=0.5, zoom_out=1.35, frame_selected=False
+        )
