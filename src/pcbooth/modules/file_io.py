@@ -27,14 +27,9 @@ def read_pcb_name_from_prj(path: str, extension: str) -> str:
     project_file = [f for f in files if f.endswith(extension)]
 
     if len(project_file) != 1:
-        logger.error(
-            f"There should be only one {extension} file in project main directory!"
-        )
+        logger.error(f"There should be only one {extension} file in project main directory!")
         logger.error("Found: " + repr(project_file))
-        raise RuntimeError(
-            f"Expected single {extension} file in current directory, got %d"
-            % len(project_file)
-        )
+        raise RuntimeError(f"Expected single {extension} file in current directory, got %d" % len(project_file))
 
     name = Path(project_file[0]).stem
     logger.debug("PCB name: %s", name)
@@ -55,9 +50,7 @@ def get_data_from_blendfile(
     return result
 
 
-def link_collection_from_blendfile(
-    blendfile: str, collection_name: str
-) -> bpy.types.Object | None:
+def link_collection_from_blendfile(blendfile: str, collection_name: str) -> bpy.types.Object | None:
     """
     Link collection data from another Blender file.
     """
@@ -72,11 +65,7 @@ def link_collection_from_blendfile(
     )
 
     # return last object that starts with collection_name (in case it got appended with index)
-    object = [
-        obj
-        for obj in bpy.data.objects
-        if obj.name.startswith(collection_name) and not obj.library
-    ][-1]
+    object = [obj for obj in bpy.data.objects if obj.name.startswith(collection_name) and not obj.library][-1]
     if isinstance(object, bpy.types.Object):
         logger.debug(f"Linked {collection_name} from {blendfile}")
         return object

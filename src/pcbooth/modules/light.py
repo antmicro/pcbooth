@@ -32,9 +32,7 @@ def load_hdri() -> None:
     hdri.image = bpy.data.images.load(config.env_texture_path)  # type: ignore
 
     background = nodes.new(type="ShaderNodeBackground")
-    background.inputs["Strength"].default_value = config.blendcfg["SCENE"][  # type: ignore
-        "HDRI_INTENSITY"
-    ]
+    background.inputs["Strength"].default_value = config.blendcfg["SCENE"]["HDRI_INTENSITY"]  # type: ignore
 
     output = nodes.new(type="ShaderNodeOutputWorld")
 
@@ -101,9 +99,7 @@ def disable_emission_nodes() -> None:
 class Light:
     objects: ClassVar[List["Light"]] = []
     collection: bpy.types.Collection
-    presets: Dict[
-        str, Tuple[Tuple[float, float, float], tuple[float, float, float], float]
-    ] = {}
+    presets: Dict[str, Tuple[Tuple[float, float, float], tuple[float, float, float], float]] = {}
     obj_y: float = 0.0
     obj_x: float = 0.0
 
@@ -198,9 +194,7 @@ class Light:
         light.shape = "RECTANGLE"  # type: ignore
 
         config_intensity = config.blendcfg["SCENE"]["LIGHTS_INTENSITY"] * intensity
-        light.energy = calculate_light_intensity(  # type: ignore
-            config_intensity, Light.obj_x, Light.obj_y
-        )
+        light.energy = calculate_light_intensity(config_intensity, Light.obj_x, Light.obj_y)  # type: ignore
 
         light_size = calculate_light_size(Light.obj_x, Light.obj_y)
         light.size = light_size[0]  # type: ignore

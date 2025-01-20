@@ -68,9 +68,7 @@ def parse_strings(arg: str) -> list[str]:
 def get_image_formats() -> List[str]:
     """Get list of valid Blender image format extensions."""
     formats_dict = types.ImageFormatSettings.bl_rna.properties["file_format"].enum_items  # type: ignore
-    return [
-        item.identifier for item in formats_dict if "Output image" in item.description
-    ]
+    return [item.identifier for item in formats_dict if "Output image" in item.description]
 
 
 def to_float(arg: str) -> str | float:
@@ -113,9 +111,7 @@ CONFIGURATION_SCHEMA = {
         "LED_ON": Field("bool"),
         "ADJUST_POS": Field("bool"),
         "ORTHO_CAM": Field("bool"),
-        "RENDERED_OBJECT": Field(
-            "data_block", optional=True, conv=parse_data_block_strings
-        ),
+        "RENDERED_OBJECT": Field("data_block", optional=True, conv=parse_data_block_strings),
     },
     "BACKGROUNDS": {"LIST": Field("list[str]")},
     "CAMERAS": {
@@ -136,16 +132,12 @@ CONFIGURATION_SCHEMA = {
 }
 
 
-def check_and_copy_blendcfg(
-    file_path: str, pcbt_path: str, force: bool = False
-) -> None:
+def check_and_copy_blendcfg(file_path: str, pcbt_path: str, force: bool = False) -> None:
     """Copy blendcfg to project's directory."""
     if not os.path.exists(file_path + BLENDCFG_FILENAME) or force:
         prompt = "enforced copy" if force else "no config found in working directory"
         logger.warning(f"Copying default config from template ({prompt})")
-        copyfile(
-            pcbt_path + "/templates/" + BLENDCFG_FILENAME, file_path + BLENDCFG_FILENAME
-        )
+        copyfile(pcbt_path + "/templates/" + BLENDCFG_FILENAME, file_path + BLENDCFG_FILENAME)
 
 
 def is_color(arg: str | None) -> bool:
@@ -261,11 +253,11 @@ def check_throw_error(cfg: Dict[str, Any], args: list[str], schema: Field) -> No
 
     not_schema_type_err = f"{val} is not a {schema.type}"
     color_type_err = f"{val} is not a color, should be hex color value"
-    data_block_type_err = (
-        f"{val} is not a valid <type>/<name> string defining Blender data-block"
-    )
+    data_block_type_err = f"{val} is not a valid <type>/<name> string defining Blender data-block"
     image_file_format_err = f"{val} is not a valid Blender image output format, must be one of {get_image_formats()}"
-    video_file_format_err = f"{val} is not a supported video output format, must be one of {['AVI', 'MP4', 'MPEG', 'WEBM', 'GIF']}"
+    video_file_format_err = (
+        f"{val} is not a supported video output format, must be one of {['AVI', 'MP4', 'MPEG', 'WEBM', 'GIF']}"
+    )
     focal_ratio_err = f"{val} is not a valid focal ratio, must be a fraction like '1/4' or 'f/4', float or 'auto'"
 
     match schema.type:
@@ -300,9 +292,7 @@ def check_throw_error(cfg: Dict[str, Any], args: list[str], schema: Field) -> No
             raise RuntimeError(f"[{args[0]}][{args[1]}] is not a {schema.type}")
 
 
-def validate_module_config(
-    schema: dict[str, Field], conf: dict[str, Any], module_name: str
-) -> bool:
+def validate_module_config(schema: dict[str, Field], conf: dict[str, Any], module_name: str) -> bool:
     """Validate the module config against a given schema.
 
     Returns

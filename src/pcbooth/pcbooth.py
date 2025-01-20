@@ -65,9 +65,7 @@ def import_python_submodules() -> None:
     """Import all available extension Python submodules from the environment."""
     # Look in the `modules` directory under site-packages
     modules_path = os.path.join(os.path.dirname(__file__), "jobs")
-    for _, module_name, _ in pkgutil.walk_packages(
-        [modules_path], prefix="pcbooth.jobs."
-    ):
+    for _, module_name, _ in pkgutil.walk_packages([modules_path], prefix="pcbooth.jobs."):
         logger.debug("Importing Python submodule: %s", module_name)
         try:
             importlib.import_module(module_name)
@@ -89,11 +87,7 @@ def find_module(name: str) -> Optional[type]:
 
         for subname, subobj in inspect.getmembers(obj):
             uppercase_name = subname.upper()
-            if (
-                inspect.isclass(subobj)
-                and issubclass(subobj, pcbooth.core.job.Job)
-                and name == uppercase_name
-            ):
+            if inspect.isclass(subobj) and issubclass(subobj, pcbooth.core.job.Job) and name == uppercase_name:
                 logger.debug("Found module: %s in %s", subname, obj)
                 return subobj
 

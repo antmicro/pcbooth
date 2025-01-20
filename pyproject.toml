@@ -56,8 +56,8 @@ exclude = [
 	"__init__.py",
 ]
 
-#[tool.black]
-#line-length = 120
+[tool.black]
+line-length = 120
 
 [tool.mypy]
 disallow_any_generics = true

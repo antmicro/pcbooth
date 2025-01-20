@@ -105,9 +105,7 @@ class Job(ABC):
             "backgrounds": (", ".join([bg.name for bg in self.studio.backgrounds])),
         }
         if self.params:
-            items["parameters"] = ", ".join(
-                f"{key}={value}" for key, value in self.params.items()
-            )
+            items["parameters"] = ", ".join(f"{key}={value}" for key, value in self.params.items())
 
         for item, value in items.items():
             if value:

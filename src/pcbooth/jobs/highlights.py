@@ -46,20 +46,14 @@ class Highlights(pcbooth.core.job.Job):
         renderer = RendererWrapper()
 
         highlighted, hidden = self.get_component_lists()
-        total_renders = (
-            len(highlighted)
-            * len(self.studio.cameras)
-            * (1 if self.studio.is_pcb else 2)
-        )
+        total_renders = len(highlighted) * len(self.studio.cameras) * (1 if self.studio.is_pcb else 2)
         self.update_status(total_renders)
         Background.use(self.studio.backgrounds[0])
         object = self.studio.top_parent
         white_mat = add_material("white", WHITE_RGB)
         highlight_mat = add_material("highlight", HIGHLIGHT_RGB)
 
-        with ju.hide_override(hidden), ju.material_override(
-            white_mat, list(bpy.data.objects)
-        ):
+        with ju.hide_override(hidden), ju.material_override(white_mat, list(bpy.data.objects)):
             for camera in self.studio.cameras:
                 for component in highlighted:
                     with ju.material_override(highlight_mat, [component]):
@@ -67,9 +61,7 @@ class Highlights(pcbooth.core.job.Job):
                             self.render_side("TOP", component, object, camera, renderer)
 
                         if component in self.studio.bottom_components:
-                            self.render_side(
-                                "BOTTOM", component, object, camera, renderer
-                            )
+                            self.render_side("BOTTOM", component, object, camera, renderer)
 
     def render_side(
         self,
@@ -95,20 +87,10 @@ class Highlights(pcbooth.core.job.Job):
         Get list of components to highlight (HIGHLIGHTED list of designators or all components present if not PCB) and
         list of components to hide (HIDDEN list of designators and all linked objects).
         """
-        rendered = set(
-            dict.fromkeys(self.studio.top_components + self.studio.bottom_components)
-        )
+        rendered = set(dict.fromkeys(self.studio.top_components + self.studio.bottom_components))
         linked = {object for object in cu.get_linked() if not is_background(object)}
-        hidden = {
-            component
-            for component in rendered
-            if is_hidden(component, self.studio.is_pcb)
-        } | linked
-        highlighted = {
-            component
-            for component in rendered
-            if is_highlighted(component, self.studio.is_pcb)
-        } - hidden
+        hidden = {component for component in rendered if is_hidden(component, self.studio.is_pcb)} | linked
+        highlighted = {component for component in rendered if is_highlighted(component, self.studio.is_pcb)} - hidden
 
         if not highlighted:
             logger.warning("No highlighted components found!")

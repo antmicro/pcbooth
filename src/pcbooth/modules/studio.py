@@ -81,9 +81,7 @@ class Studio:
                     camera.save_position(position)
                     camera.save_focus(position)
 
-        logger.info(
-            f"Added {len(Camera.objects)} cameras to Studio: {[cam.object.name for cam in Camera.objects]}"
-        )
+        logger.info(f"Added {len(Camera.objects)} cameras to Studio: {[cam.object.name for cam in Camera.objects]}")
 
         cfg_cameras = [key for key, val in config.blendcfg["CAMERAS"].items() if val]
         cfg_pos = [key for key, val in config.blendcfg["POSITIONS"].items() if val]
@@ -104,9 +102,7 @@ class Studio:
 
         cfg_bgs = config.blendcfg["BACKGROUNDS"]["LIST"]
         self.backgrounds = [bg for bg in Background.objects if bg.name in cfg_bgs]
-        if missing_bgs := [
-            bg for bg in cfg_bgs if bg not in {bg.name for bg in self.backgrounds}
-        ]:
+        if missing_bgs := [bg for bg in cfg_bgs if bg not in {bg.name for bg in self.backgrounds}]:
             logger.warning("No such background: %s", missing_bgs)
 
     def _add_lights(self) -> None:
@@ -116,9 +112,7 @@ class Studio:
         for light_name in Light.presets:
             Light(light_name, *Light.presets[light_name])
 
-        logger.info(
-            f"Added {len(Light.objects)} lights to Studio: {[light.object.name for light in Light.objects]}"
-        )
+        logger.info(f"Added {len(Light.objects)} lights to Studio: {[light.object.name for light in Light.objects]}")
         self.lights = Light.objects
 
     def _apply_effects(self) -> None:
@@ -167,9 +161,7 @@ class Studio:
         self.is_pcb = True
         self.top_parent = bpy.data.objects.get(config.PCB_name)
         if not self.top_parent:
-            raise RuntimeError(
-                f"{config.PCB_name} object could not be found in Blender model data."
-            )
+            raise RuntimeError(f"{config.PCB_name} object could not be found in Blender model data.")
         self.rendered_obj = self.top_parent
         self.components = cu.select_all(self.top_parent)
         self._get_top_bottom_components()
@@ -178,15 +170,11 @@ class Studio:
         self.is_collection = True
         rendered_col = bpy.data.collections.get(collection_name)
         if not rendered_col:
-            raise RuntimeError(
-                f"{collection_name} collection could not be found in Blender model data."
-            )
+            raise RuntimeError(f"{collection_name} collection could not be found in Blender model data.")
         scene_components = [object for object in bpy.data.objects]
         rendered_components = [object for object in rendered_col.objects]
         self._get_top_bottom_components(rendered_components)
-        self.rendered_obj = cu.add_empty(
-            "_rendered_parent", children=rendered_components
-        )
+        self.rendered_obj = cu.add_empty("_rendered_parent", children=rendered_components)
         self.top_parent = cu.add_empty("_parent", children=scene_components)
         cu.parent_list_to_object([self.rendered_obj], self.top_parent)
 
@@ -194,9 +182,7 @@ class Studio:
         self.is_object = True
         self.rendered_obj = bpy.data.objects.get(object_name)
         if not self.rendered_obj:
-            raise RuntimeError(
-                f"{object_name} object could not be found in Blender model data."
-            )
+            raise RuntimeError(f"{object_name} object could not be found in Blender model data.")
         scene_components = [object for object in bpy.data.objects]
         self._get_top_bottom_components()
         self.top_parent = cu.add_empty("_parent", children=scene_components)
@@ -248,11 +234,7 @@ class Studio:
                 elif comp["PCB_Side"] == "B":
                     bot_comps.append(comp)
         else:
-            top_comps = [
-                obj
-                for obj in objects
-                if not obj.name.startswith("_") and not obj.library
-            ]
+            top_comps = [obj for obj in objects if not obj.name.startswith("_") and not obj.library]
             bot_comps = top_comps.copy()
         logger.debug(f"Read top components: {top_comps}")
         logger.debug(f"Read bot components: {bot_comps}")

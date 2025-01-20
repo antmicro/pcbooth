@@ -60,14 +60,10 @@ class FlipTransition(pcbooth.core.job.Job):
 
         # create rendered object keyframes
         self.studio.change_position(pair[0])
-        self.studio.top_parent.keyframe_insert(
-            data_path="rotation_euler", frame=scene.frame_start
-        )
+        self.studio.top_parent.keyframe_insert(data_path="rotation_euler", frame=scene.frame_start)
 
         self.studio.change_position(pair[1])
-        self.studio.top_parent.keyframe_insert(
-            data_path="rotation_euler", frame=scene.frame_end
-        )
+        self.studio.top_parent.keyframe_insert(data_path="rotation_euler", frame=scene.frame_end)
 
     def create_camera_keyframes(self, camera: Camera, pair: Tuple[str, str]) -> None:
         scene = bpy.context.scene
@@ -81,6 +77,4 @@ class FlipTransition(pcbooth.core.job.Job):
         camera.add_keyframe(scene.frame_end)
 
         # create intermediate frame with camera zoom out
-        camera.add_intermediate_keyframe(
-            self.studio.top_parent, progress=0.5, zoom_out=1.35, frame_selected=False
-        )
+        camera.add_intermediate_keyframe(self.studio.top_parent, progress=0.5, zoom_out=1.35, frame_selected=False)

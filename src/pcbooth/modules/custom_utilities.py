@@ -130,18 +130,14 @@ def parent_list_to_object(
         bpy.ops.object.select_all(action="DESELECT")
 
 
-def link_obj_to_collection(
-    obj: bpy.types.Object, target_coll: bpy.types.Collection
-) -> None:
+def link_obj_to_collection(obj: bpy.types.Object, target_coll: bpy.types.Collection) -> None:
     """Loop through all collections the obj is linked to and unlink it from there, then link to target collection."""
     for coll in obj.users_collection:  # type: ignore
         coll.objects.unlink(obj)
     target_coll.objects.link(obj)
 
 
-def get_collection(
-    name: str, parent: Optional[bpy.types.Collection] = None
-) -> bpy.types.Collection:
+def get_collection(name: str, parent: Optional[bpy.types.Collection] = None) -> bpy.types.Collection:
     """Get collection with provided name, create it if necessary"""
 
     name = name[:63]
@@ -215,9 +211,7 @@ def get_linked() -> List[bpy.types.Object]:
     Those objects can be used as parent of the linked collections for translations or defining
     visibility
     """
-    return [
-        object for object in bpy.data.objects if object.instance_type == "COLLECTION"
-    ]
+    return [object for object in bpy.data.objects if object.instance_type == "COLLECTION"]
 
 
 def get_designator(object: bpy.types.Object) -> str:

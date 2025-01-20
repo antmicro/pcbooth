@@ -61,9 +61,7 @@ def restore_default_cycles() -> None:
     for prop in dir(cycles_visibility):
         if not prop.startswith("_") and hasattr(cycles_visibility, prop):
             try:
-                default_value = bpy.types.CyclesVisibilitySettings.bl_rna.properties[  # type: ignore
-                    prop
-                ].default
+                default_value = bpy.types.CyclesVisibilitySettings.bl_rna.properties[prop].default  # type: ignore
                 setattr(cycles_visibility, prop, default_value)
             except AttributeError:
                 pass
@@ -141,9 +139,7 @@ def setup_gpu() -> None:
     """
     cycles_preferences = bpy.context.preferences.addons["cycles"].preferences
     cycles_preferences.refresh_devices()  # type: ignore
-    logger.debug(
-        f"Available devices: {[device for device in cycles_preferences.devices]}"  # type: ignore
-    )
+    logger.debug(f"Available devices: {[device for device in cycles_preferences.devices]}")  # type: ignore
     gpu_types = [
         "CUDA",
         "OPTIX",
@@ -153,16 +149,12 @@ def setup_gpu() -> None:
     ]
 
     try:
-        device = next(
-            (dev for dev in cycles_preferences.devices if dev.type in gpu_types)  # type: ignore
-        )
+        device = next((dev for dev in cycles_preferences.devices if dev.type in gpu_types))  # type: ignore
         bpy.context.scene.cycles.device = "GPU"
         cycles_preferences.compute_device_type = device.type  # type: ignore
         logger.info(f"Enabled GPU rendering with: {device.name}.")
     except StopIteration:
-        device = next(
-            (dev for dev in cycles_preferences.devices if dev.type == "CPU"), None  # type: ignore
-        )
+        device = next((dev for dev in cycles_preferences.devices if dev.type == "CPU"), None)  # type: ignore
         bpy.context.scene.cycles.device = "CPU"
         cycles_preferences.compute_device_type = "NONE"  # type: ignore
         logger.info(f"No GPU device found, enabled CPU rendering with: {device.name}")
@@ -416,9 +408,7 @@ class FFmpegWrapper:
         """Execute FFMPEG command."""
 
         preset_dict = FFmpegWrapper.FORMAT_ARGUMENTS[self.format]
-        full_output_file = Path(
-            f"{self.animation_path}{output_file}{suffix}{self.vid_ext}"
-        )
+        full_output_file = Path(f"{self.animation_path}{output_file}{suffix}{self.vid_ext}")
 
         mkdir(str(full_output_file.parent))
         cmd = self._get_cmd(input_dict | preset_dict, full_output_file)
@@ -427,12 +417,7 @@ class FFmpegWrapper:
 
     def _get_cmd(self, cmd_dict: Dict[str, str], output_file: str | Path) -> List[str]:
         """Prepare list of FFMPEG arguments from dictionary for subprocess library."""
-        return (
-            ["ffmpeg"]
-            + [item for pair in cmd_dict.items() for item in pair]
-            + [str(output_file)]
-            + ["-y"]
-        )
+        return ["ffmpeg"] + [item for pair in cmd_dict.items() for item in pair] + [str(output_file)] + ["-y"]
 
     def clear_frames(self) -> None:
         """

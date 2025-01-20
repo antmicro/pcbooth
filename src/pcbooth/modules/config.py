@@ -88,6 +88,4 @@ def configure_paths(arguments: argparse.Namespace) -> None:
         pcb_blend_path = path.abspath(arguments.blend_path)
 
     if not path.exists(pcb_blend_path):
-        raise RuntimeError(
-            f"There is no .blend file in expected directory! ({pcb_blend_path})"
-        )
+        raise RuntimeError(f"There is no .blend file in expected directory! ({pcb_blend_path})")

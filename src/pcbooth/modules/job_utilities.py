@@ -98,10 +98,7 @@ def material_override(
         for component in backup.keys():
             if component.library:
                 continue
-            if (
-                hasattr(component.data, "materials")
-                and len(component.material_slots) == 0
-            ):
+            if hasattr(component.data, "materials") and len(component.material_slots) == 0:
                 component.data.materials.append(base_material)
                 continue
             for slot in component.material_slots:
@@ -122,9 +119,7 @@ def material_override(
 
 
 @contextmanager
-def compositing_override(
-    compositing_func: Callable[..., None]
-) -> Generator[None, Any, None]:
+def compositing_override(compositing_func: Callable[..., None]) -> Generator[None, Any, None]:
     """Apply compositor override."""
     try:
         compositing_func()

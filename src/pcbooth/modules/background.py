@@ -25,11 +25,9 @@ class Background:
         studio = cu.get_collection("Studio")
         collection = cu.get_collection("Backgrounds", studio)
         cls.collection = collection
-        cls.files = [
-            file.stem
-            for file in Path(config.backgrounds_path).iterdir()
-            if file.suffix == ".blend"
-        ] + ["transparent"]
+        cls.files = [file.stem for file in Path(config.backgrounds_path).iterdir() if file.suffix == ".blend"] + [
+            "transparent"
+        ]
 
     @classmethod
     def get(cls, name: str) -> Optional["Background"]:
@@ -83,9 +81,7 @@ class Background:
             if linked_object:
                 object = linked_object
                 cu.link_obj_to_collection(object, Background.collection)
-                logger.debug(
-                    f"Added background linked object: {object.name} from {blendfile}"
-                )
+                logger.debug(f"Added background linked object: {object.name} from {blendfile}")
                 Background.objects.append(self)
             else:
                 object = cu.add_empty(name, Background.collection)

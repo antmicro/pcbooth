@@ -55,16 +55,12 @@ class Bounds:
 
     def _get_min_z(self) -> float:
         """Get lowest Z coordinate of all bounding box vertices coordinates of an object"""
-        current_vertices = [
-            Vector(v[:]) @ self.bounds.matrix_world for v in self.bounds.bound_box  # type: ignore
-        ]
+        current_vertices = [Vector(v[:]) @ self.bounds.matrix_world for v in self.bounds.bound_box]  # type: ignore
         return min([v.z for v in current_vertices])
 
     def _get_max_z(self) -> float:
         """Get highest Z coordinate of all bounding box vertices coordinates of an object"""
-        current_vertices = [
-            Vector(v[:]) @ self.bounds.matrix_world for v in self.bounds.bound_box  # type: ignore
-        ]
+        current_vertices = [Vector(v[:]) @ self.bounds.matrix_world for v in self.bounds.bound_box]  # type: ignore
         return max([v.z for v in current_vertices])
 
     def clear(self) -> None:
@@ -94,9 +90,7 @@ def get_vertices(
         # there's no need to apply transforms in the source file
         if obj.library:
             if lib_obj := cu.get_root_object(obj):
-                bbox_obj = [
-                    obj.matrix_world @ Vector(corner) for corner in obj.bound_box  # type: ignore
-                ]
+                bbox_obj = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]  # type: ignore
                 bbox_lib = [lib_obj.matrix_world @ corner for corner in bbox_obj]
                 vertices.extend(bbox_lib)
             else:
@@ -132,9 +126,7 @@ def generate_bounds(objects: List[bpy.types.Object]) -> bpy.types.Object:
     return obj
 
 
-def generate_mesh(
-    vertices: List[Tuple[float, float, float]] | List[Vector]
-) -> bpy.types.Object:
+def generate_mesh(vertices: List[Tuple[float, float, float]] | List[Vector]) -> bpy.types.Object:
     """Generate mesh from vertices, edges and faces lists"""
     mesh = bpy.data.meshes.new(BOUNDS_NAME)
     mesh.from_pydata(vertices, [], [])

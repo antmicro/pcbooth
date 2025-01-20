@@ -66,9 +66,7 @@ class CameraTransition(pcbooth.core.job.Job):
                 clear_animation_data()
         ffmpeg.clear_frames()
 
-    def create_keyframes(
-        self, camera_start: Camera, camera_end: Camera, position: str
-    ) -> None:
+    def create_keyframes(self, camera_start: Camera, camera_end: Camera, position: str) -> None:
         scene = bpy.context.scene
 
         # create start camera + focus keyframes
@@ -83,13 +81,9 @@ class CameraTransition(pcbooth.core.job.Job):
         camera_start.add_keyframe(scene.frame_end)
 
         # exception for when left to right camera transition is requested
-        if all(
-            cam in ["LEFT", "RIGHT"] for cam in [camera_start.name, camera_end.name]
-        ):
+        if all(cam in ["LEFT", "RIGHT"] for cam in [camera_start.name, camera_end.name]):
             if camera_mid := Camera.get("FRONT"):
                 camera_start.object.matrix_world = camera_mid.object.matrix_world.copy()
 
         # create intermediate frame with camera zoom out
-        camera_start.add_intermediate_keyframe(
-            self.studio.rendered_obj, progress=0.5, zoom_out=1.2
-        )
+        camera_start.add_intermediate_keyframe(self.studio.rendered_obj, progress=0.5, zoom_out=1.2)

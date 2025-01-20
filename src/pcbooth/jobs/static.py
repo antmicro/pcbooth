@@ -24,11 +24,7 @@ class Static(pcbooth.core.job.Job):
         Main loop of the module to be run within execute() method.
         """
         renderer = RendererWrapper()
-        total_renders = (
-            len(self.studio.positions)
-            * len(self.studio.cameras)
-            * len(self.studio.backgrounds)
-        )
+        total_renders = len(self.studio.positions) * len(self.studio.cameras) * len(self.studio.backgrounds)
         self.update_status(total_renders)
 
         for position in self.studio.positions:

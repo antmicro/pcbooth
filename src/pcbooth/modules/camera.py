@@ -78,9 +78,7 @@ class Camera:
             object.rotation_euler = rotation
         cu.link_obj_to_collection(object, Camera.collection)
 
-        logger.debug(
-            f"Added camera object: {object.name} at {object.rotation_euler}, {object.location}"
-        )
+        logger.debug(f"Added camera object: {object.name} at {object.rotation_euler}, {object.location}")
         Camera.objects.append(self)
         return object
 
@@ -93,9 +91,7 @@ class Camera:
         if config.blendcfg["SCENE"]["DEPTH_OF_FIELD"]:
             self.object.data.dof.use_dof = True  # type: ignore
         self._sensor_default: float = 36.0
-        self._sensor_zoomedout: float = (
-            config.blendcfg["SCENE"]["ZOOM_OUT"] * self._sensor_default
-        )
+        self._sensor_zoomedout: float = config.blendcfg["SCENE"]["ZOOM_OUT"] * self._sensor_default
 
     def save_position(self, key: str) -> None:
         """
@@ -103,9 +99,7 @@ class Camera:
         """
         cu.update_depsgraph()
         self.positions[key] = self.object.matrix_world.copy()
-        logger.debug(
-            f"Saved {self.object.name} location: \n{self.positions[key]} as '{key}'"
-        )
+        logger.debug(f"Saved {self.object.name} location: \n{self.positions[key]} as '{key}'")
 
     def save_focus(self, key: str) -> None:
         """
@@ -116,9 +110,7 @@ class Camera:
             self.object.data.dof.focus_distance,  # type: ignore
             self.object.data.dof.aperture_fstop,  # type: ignore
         )
-        logger.debug(
-            f"Saved {self.object.name} focus: \n{self.focuses[key]} as '{key}'"
-        )
+        logger.debug(f"Saved {self.object.name} focus: \n{self.focuses[key]} as '{key}'")
 
     def change_position(self, key: str) -> None:
         """
@@ -159,9 +151,7 @@ class Camera:
         Apply focal ratio.
         """
         cu.set_origin(object)
-        self.object.data.dof.focus_distance = abs(  # type: ignore
-            (object.location - self.object.location).length
-        )
+        self.object.data.dof.focus_distance = abs((object.location - self.object.location).length)  # type: ignore
         cfg_f_ratio = config.blendcfg["SCENE"]["FOCAL_RATIO"]
         self.object.data.dof.aperture_fstop = (  # type: ignore
             self._calculate_focal_ratio() if cfg_f_ratio == "auto" else cfg_f_ratio
@@ -208,12 +198,8 @@ class Camera:
         if zoom_out:
             self.object.data.keyframe_insert(data_path="sensor_width", frame=frame)
         if focus:
-            self.object.data.dof.keyframe_insert(  # type: ignore
-                data_path="focus_distance", frame=frame
-            )
-            self.object.data.dof.keyframe_insert(  # type: ignore
-                data_path="aperture_fstop", frame=frame
-            )
+            self.object.data.dof.keyframe_insert(data_path="focus_distance", frame=frame)  # type: ignore
+            self.object.data.dof.keyframe_insert(data_path="aperture_fstop", frame=frame)  # type: ignore
 
     def add_intermediate_keyframe(
         self,

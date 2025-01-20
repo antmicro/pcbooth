@@ -49,21 +49,14 @@ class Masks(pcbooth.core.job.Job):
         Main loop of the module to be run within execute() method.
         """
         if not self.params.get("FULL") and not self.params.get("COVERED"):
-            logger.warning(
-                "All subtypes of masks are disabled, nothing to render within this job."
-            )
+            logger.warning("All subtypes of masks are disabled, nothing to render within this job.")
             return
 
         renderer = RendererWrapper()
         object = self.studio.top_parent
         highlighted = self.get_component_lists()
         len_params = sum(value is True for value in self.params.values())
-        total_renders = (
-            len(highlighted)
-            * len(self.studio.cameras)
-            * (1 if self.studio.is_pcb else 2)
-            * len_params
-        )
+        total_renders = len(highlighted) * len(self.studio.cameras) * (1 if self.studio.is_pcb else 2) * len_params
         self.update_status(total_renders)
 
         with (
@@ -111,21 +104,13 @@ class Masks(pcbooth.core.job.Job):
         """
         Get list of components to highlight (HIGHLIGHTED list of designators or all components present if not PCB).
         """
-        rendered = set(
-            dict.fromkeys(self.studio.top_components + self.studio.bottom_components)
-        )
-        highlighted = {
-            component
-            for component in rendered
-            if self.is_highlighted(component, self.studio.is_pcb)
-        }
+        rendered = set(dict.fromkeys(self.studio.top_components + self.studio.bottom_components))
+        highlighted = {component for component in rendered if self.is_highlighted(component, self.studio.is_pcb)}
         if not highlighted:
             logger.warning("No highlighted components found!")
         return highlighted
 
-    def get_name(
-        self, object: bpy.types.Object, position: str, camera: Camera, state: str
-    ) -> str:
+    def get_name(self, object: bpy.types.Object, position: str, camera: Camera, state: str) -> str:
         """Get object name or designator, depends on model type (designator if model is a PCB, object name if other)"""
         prefix = f"masks/{state}/{camera.name.lower()}{position[0]}/"
         if self.studio.is_pcb:
