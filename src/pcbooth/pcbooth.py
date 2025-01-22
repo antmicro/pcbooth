@@ -52,9 +52,15 @@ def parse_args() -> argparse.Namespace:
         default="default",
     )
     parser.add_argument(
-        "-g",
-        "--get-config",
-        help="copy blendcfg.yaml to CWD and exit",
+        "-R",
+        "--reset-config",
+        help="Reset local config settings to the values from the template and exit. Copy blendcfg.yaml to CWD instead if there is no CWD config file found.",
+        action="store_true",
+    )
+    parser.add_argument(
+        "-u",
+        "--update-config",
+        help="Update local config settings with the additional ones found in the template and exit. Copy blendcfg.yaml to CWD instead if there is no CWD config file found.",
         action="store_true",
     )
 
@@ -141,16 +147,9 @@ def main() -> int:
     try:
         args = parse_args()
         log.set_logging(args.debug)
-
-        if args.get_config:
-            prj_path = os.getcwd() + "/"
-            pcbt_dir_path = os.path.dirname(__file__)
-            blendcfg.check_and_copy_blendcfg(prj_path, pcbt_dir_path, force=True)
-            return 0
-
-        config.init_global(args)
-        studio = Studio(config.pcb_blend_path)
-        run_modules_for_config(config.blendcfg, studio)
+        if config.init_global(args):
+            studio = Studio(config.pcb_blend_path)
+            run_modules_for_config(config.blendcfg, studio)
         return 0
 
     except Exception as e:

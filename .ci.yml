@@ -32,6 +32,10 @@ code-formatting:
     apt update && apt-get -qqy install git pip python3.11 python3-poetry python3.11-venv pipx libsm6 ffmpeg >> logs/debian_install.log
     python3.11 -m pipx install .
 
+.get_config: &get_config |-
+    pcbooth -u
+    echo >> blendcfg.yaml; cat sample/tests.yaml >> blendcfg.yaml
+
 .test: &test
   image: 'debian:bookworm'
   stage: test
@@ -45,43 +49,49 @@ code-formatting:
     - true
   artifacts:
     paths:
-      - blender_renders/
-      - assets/previews/
+      - renders/
+      - animations/
 
 static-test:
   <<: *test
   script:
     - export PATH=$HOME/.local/bin:$PATH
+    - *get_config
     - pcbooth -b sample/*.blend -c static_test
 
 highlights-test:
   <<: *test
   script:
     - export PATH=$HOME/.local/bin:$PATH
+    - *get_config
     - pcbooth -b sample/*.blend -c highlights_test
 
 masks-test:
   <<: *test
   script:
     - export PATH=$HOME/.local/bin:$PATH
+    - *get_config
     - pcbooth -b sample/*.blend -c masks_test
 
 flip-transition-test:
   <<: *test
   script:
     - export PATH=$HOME/.local/bin:$PATH
+    - *get_config
     - pcbooth -b sample/*.blend -c flip_transition_test
 
 camera-transition-test:
   <<: *test
   script:
     - export PATH=$HOME/.local/bin:$PATH
+    - *get_config
     - pcbooth -b sample/*.blend -c camera_transition_test
 
 stackup-test:
   <<: *test
   script:
     - export PATH=$HOME/.local/bin:$PATH
+    - *get_config
     - pcbooth -b sample/*.blend -c stackup_test
 
 docs-build:

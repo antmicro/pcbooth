@@ -1,10 +1,9 @@
 """Module responsible for parsing config file."""
 
 import logging
-import os.path
 from shutil import copyfile
 from typing import Any, Callable, Dict, Optional, List
-import hiyapyco  # type: ignore
+import ruamel.yaml
 import re
 from bpy import types
 
@@ -32,7 +31,7 @@ class Field:
             field_type: String name of the type of the field. One of: "color",
                 "background", "bool", "number", "color_preset", "transition".
             conv: Converter function to use. When set, the value of the field from
-                `blendcfg.yaml` is passed to this function. Value returned from
+                config YAML is passed to this function. Value returned from
                 the function is still checked against the field's specified type.
             optional: Specify if the field can be omitted from the blendcfg. Optional
                 fields are set to None in the configuration if they are not
@@ -78,7 +77,7 @@ def to_float(arg: str) -> str | float:
         return arg
 
 
-# Schema for blendcfg.yaml file
+# Schema for YAML config file
 CONFIGURATION_SCHEMA = {
     "SETTINGS": {
         "PRJ_EXTENSION": Field("string"),
@@ -130,14 +129,6 @@ CONFIGURATION_SCHEMA = {
         "REAR": Field("bool"),
     },
 }
-
-
-def check_and_copy_blendcfg(file_path: str, pcbt_path: str, force: bool = False) -> None:
-    """Copy blendcfg to project's directory."""
-    if not os.path.exists(file_path + BLENDCFG_FILENAME) or force:
-        prompt = "enforced copy" if force else "no config found in working directory"
-        logger.warning(f"Copying default config from template ({prompt})")
-        copyfile(pcbt_path + "/templates/" + BLENDCFG_FILENAME, file_path + BLENDCFG_FILENAME)
 
 
 def is_color(arg: str | None) -> bool:
@@ -204,7 +195,7 @@ def check_throw_error(cfg: Dict[str, Any], args: list[str], schema: Field) -> No
 
     Args:
     ----
-        cfg: entire deserialized blendcfg.yaml file
+        cfg: entire deserialized YAML config file
         args: a list of names leading to the configuration entry that
               needs to be checked, for example: ["SETTINGS", "DPI"].
               Currently, there must be exactly two names present in the list!
@@ -314,7 +305,7 @@ def validate_module_config(schema: dict[str, Field], conf: dict[str, Any], modul
 
 
 def validate_setting_dependencies(cfg: Any) -> None:
-    """Validate if certain blendcfg.yaml settings have their required dependencies."""
+    """Validate if certain YAML config file settings have their required dependencies."""
     _ = cfg
     pass
     # Left empty on purpose
@@ -323,8 +314,82 @@ def validate_setting_dependencies(cfg: Any) -> None:
     # on a different setting to be enabled.
 
 
+def open_blendcfg(path: str, config_preset: str, pcbt_path: str) -> Dict[str, Any]:
+    """Open configuration file from the specified path."""
+    project_cfg = path + "/" + BLENDCFG_FILENAME
+
+    yaml = ruamel.yaml.YAML()
+    yaml.indent(mapping=2, sequence=4, offset=2)
+    with open(project_cfg) as prj_file:
+        project_cfg = yaml.load(prj_file)
+
+    if not isinstance(project_cfg, dict):
+        raise RuntimeError(f"Invalid config loaded.")
+
+    if not config_preset:
+        if "default" not in project_cfg:
+            raise RuntimeError(f"Default config is not defined in {BLENDCFG_FILENAME}.")
+        config = project_cfg["default"]
+    else:
+        if config_preset not in project_cfg:
+            raise RuntimeError(f"Unknown blendcfg preset: {config_preset}")
+        config = update_yamls(project_cfg["default"], project_cfg[config_preset])
+
+    return check_and_parse_blendcfg(config)
+
+
+def copy_blendcfg(file_path: str, pcbt_path: str) -> None:
+    """Copy blendcfg to project's directory."""
+    logger.warning(f"Copying default config from template.")
+    copyfile(pcbt_path + "/templates/" + BLENDCFG_FILENAME, file_path + BLENDCFG_FILENAME)
+
+
+def merge_blendcfg(file_path: str, pcbt_path: str, overwrite: bool = False) -> None:
+    """
+    Merge template blendcfg with local one in project's directory and save changes to file.
+    When overwrite is enabled, values set in local config will be replaced with the ones in template.
+    When overwrite is disabled, settings that are missing in the local config will be added from template
+    (serves as a fallback in situations when required config keys are missing to prevent crashes).
+    """
+    prompt = " (overwriting local values)" if overwrite else ""
+    logger.warning(f"Merging default config from template with local one found{prompt}.")
+    project_cfg_path = file_path + "/" + BLENDCFG_FILENAME
+    template_cfg_path = pcbt_path + "/templates/" + BLENDCFG_FILENAME
+
+    yaml = ruamel.yaml.YAML()
+    yaml.indent(mapping=2, sequence=4, offset=2)
+
+    with open(project_cfg_path) as prj_file, open(template_cfg_path) as temp_file:
+        project_cfg = yaml.load(prj_file)
+        template_cfg = yaml.load(temp_file)
+
+    if overwrite:
+        cfg = update_yamls(project_cfg, template_cfg)
+
+    else:
+        cfg = update_yamls(template_cfg, project_cfg)
+
+    merged_cfg = project_cfg = file_path + "/" + BLENDCFG_FILENAME
+    with open(merged_cfg, "w") as file:
+        yaml.dump(cfg, file)
+
+
+def update_yamls(
+    source: Dict[str, Any],
+    target: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Recursively overwrite target values with source values. Adds missing keys found in source."""
+    for key, value in source.items():
+        if key in target:
+            if isinstance(value, dict) and isinstance(target[key], dict):
+                update_yamls(value, target[key])
+        else:
+            target[key] = value
+    return target
+
+
 def check_and_parse_blendcfg(cfg: Dict[str, Any]) -> Dict[str, Any]:
-    """Validate and parse the blendcfg.yaml loaded from a file."""
+    """Validate and parse the YAML loaded from a file."""
     valid = True
 
     for module in cfg:
@@ -336,18 +401,8 @@ def check_and_parse_blendcfg(cfg: Dict[str, Any]) -> Dict[str, Any]:
             valid = False
 
     if not valid:
-        raise RuntimeError("Configuration in blendcfg.yaml invalid")
+        raise RuntimeError(f"Configuration in {BLENDCFG_FILENAME} invalid")
 
     validate_setting_dependencies(cfg)
 
     return cfg
-
-
-def open_blendcfg(path: str, config_preset: str, pcbt_path: str) -> Dict[str, Any]:
-    """Open configuration file from the specified path."""
-    cfg_path = path + "/" + BLENDCFG_FILENAME
-    template_path = pcbt_path + "/templates/" + BLENDCFG_FILENAME
-    config = hiyapyco.load([template_path, cfg_path], method=hiyapyco.METHOD_MERGE)
-    if config_preset not in config:
-        raise RuntimeError(f"Unknown blendcfg preset: {config_preset}")
-    return check_and_parse_blendcfg(config[config_preset])

@@ -184,8 +184,8 @@ To learn how to create your own rendering jobs, see the [Rendering jobs](#jobs.m
 You can run `PCBooth` with a specified configuration preset by typing `PCBooth -c custom_preset` as mentioned in [usage chapter](usage.md#additional-cli-arguments). The current template file contains a single, default preset. You can add a new preset and save it in the `blendcfg.yaml` template file as follows:
 
 ```yaml
-default: &default
-  SETTINGS: &default_settings
+default:
+  SETTINGS:
     PRJ_EXTENSION: .kicad_pro         
     FAB_DIR: fab                      
     RENDER_DIR: blender_renders       
@@ -193,10 +193,8 @@ default: &default
         ...
 
 custom_preset:
-  <<: *default
   SETTINGS:
-    <<: *default_settings
     PRJ_EXTENSION: .pro         
 ```
 
-In `blendcfg.yaml presets`, only the fields that are modified need to be included in a new preset. The remaining values are inherited from the default preset through mapping merges. 
+In `blendcfg.yaml` presets, only the fields that are modified need to be included in a new preset. The remaining values are inherited from the default preset through mapping merges. 

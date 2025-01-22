@@ -1,0 +1,80 @@
+_test_settings: &test_settings
+  KEEP_FRAMES: True             
+  SAVE_SCENE: True               
+
+_test_renderer: &test_renderer
+  SAMPLES: 8                      
+  FPS: 10                       
+  IMAGE_WIDTH: 740              
+  IMAGE_HEIGHT: 740             
+
+static_test:
+  SETTINGS:
+    <<: *test_settings
+  RENDERER:
+    <<: *test_renderer
+  CAMERAS:
+    TOP: True
+    PHOTO1: True
+  POSITIONS:
+    TOP: True
+  OUTPUTS:
+  - STATIC:
+
+flip_transition_test:
+  SETTINGS:
+    <<: *test_settings
+  RENDERER:
+    <<: *test_renderer
+  POSITIONS:
+    TOP: True
+    BOTTOM: True
+  CAMERAS:
+    TOP: True
+  OUTPUTS:
+  - FLIPTRANSITION:
+
+camera_transition_test:
+  SETTINGS:
+    <<: *test_settings
+  RENDERER:
+    <<: *test_renderer
+  CAMERAS:
+    TOP: True
+    LEFT: True
+  POSITIONS:
+    TOP: True
+  OUTPUTS:
+  - CAMERATRANSITION:
+
+highlights_test:
+  SETTINGS:
+    <<: *test_settings
+  RENDERER:
+    <<: *test_renderer
+  CAMERAS:
+    PHOTO1: True
+  POSITIONS:
+    TOP: True
+  OUTPUTS:
+  - HIGHLIGHTS:
+
+masks_test:
+  SETTINGS:
+    <<: *test_settings
+  RENDERER:
+    <<: *test_renderer
+  CAMERAS:
+    PHOTO1: True
+  POSITIONS:
+    TOP: True
+  OUTPUTS:
+  - MASKS:
+
+stackup_test:
+  SETTINGS:
+    <<: *test_settings
+  RENDERER:
+    <<: *test_renderer
+  OUTPUTS:
+  - STACKUP:
