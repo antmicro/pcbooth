@@ -21,7 +21,7 @@ jobs:
           run: |
             echo 'deb http://deb.debian.org/debian bookworm-backports main' > /etc/apt/sources.list.d/backports.list
             apt -qqy update
-            apt -qqy install install git pip python3.11 python3-poetry python3.11-venv pipx libsm6 ffmpeg 
+            apt -qqy install git pip python3.11 python3-poetry python3.11-venv pipx libsm6 ffmpeg 
 
         - uses: actions/checkout@v4
           with:
@@ -43,7 +43,7 @@ jobs:
             pcbooth -b sample/*.blend -c flip_transition_test
 
 
-        - uses: actions/upload-artifact@v3
+        - uses: actions/upload-artifact@v4
           with:
             name: HW project artifacts
             path: |
