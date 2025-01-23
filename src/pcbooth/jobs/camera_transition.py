@@ -62,6 +62,8 @@ class CameraTransition(pcbooth.core.job.Job):
                 renderer.render_animation(camera_start.object, filename)
                 ffmpeg.run(filename, filename)
                 ffmpeg.reverse(filename, rev_filename)
+                ffmpeg.thumbnail(filename)
+                ffmpeg.thumbnail(rev_filename)
                 self.update_status()
                 clear_animation_data()
         ffmpeg.clear_frames()

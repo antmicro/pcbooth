@@ -385,10 +385,12 @@ class FFmpegWrapper:
             }
             self._sequence(input_dict, output_file)
 
-    def thumbnail(self, input_file: str, output_file: str) -> None:
+    def thumbnail(self, input_file: str, output_file: Optional[str] = None) -> None:
         """Scale existing video file down into thumbnail."""
         if not config.blendcfg["SETTINGS"]["THUMBNAILS"]:
             return
+        if not output_file:
+            output_file = input_file
         for format in self.formats:
             self._set_video_format(format)
             decoder = FFmpegWrapper.FORMAT_ARGUMENTS[self.format]
