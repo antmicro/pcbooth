@@ -37,10 +37,7 @@ jobs:
         - name: Test 
           run: |
             PATH=$PATH:~/.local/bin
-            pcbooth -u
-            echo >> blendcfg.yaml; cat sample/tests.yaml >> blendcfg.yaml
-            pcbooth -b sample/*.blend -c static_test
-            pcbooth -b sample/*.blend -c flip_transition_test
+            pcbooth -b sample/*.blend -c demo
 
 
         - uses: actions/upload-artifact@v4
