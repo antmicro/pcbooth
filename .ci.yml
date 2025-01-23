@@ -1,28 +1,7 @@
-stages:
-  - code-checks
-  - test
-  - build
-  - deploy
-
-type-correctness:
-  stage: code-checks
-  image: 'debian:bookworm'
-  allow_failure: true
-  script:
-    - apt update && apt -qqy install pip python3-poetry python3.11
-    - poetry add mypy fake-bpy-module-4.1==20240604
-    - poetry install
-    - poetry run mypy --install-types --non-interactive --disallow-untyped-defs src/
-
-code-formatting:
-  stage: code-checks
-  image: 'debian:bookworm'
-  allow_failure: true
-  script:
-    - apt update && apt -qqy install pip python3-poetry python3.11
-    - poetry add black
-    - poetry install
-    - poetry run black --check src/
+include:
+  - project: repositories/hardware-scripts
+    ref: main
+    file: ci_templates/.ci_python_w_docs.yml
 
 .install_pcbooth: &install_pcbooth |-
     export PATH=$HOME/.local/bin:$PATH
@@ -93,41 +72,4 @@ stackup-test:
     - export PATH=$HOME/.local/bin:$PATH
     - *get_config
     - pcbooth -b sample/*.blend -c stackup_test
-
-docs-build:
-  image: debian:trixie
-  stage: build
-  variables:
-    GIT_SUBMODULE_STRATEGY: normal
-  before_script:
-    - apt-get update
-    - apt-get install python3-venv python3-pip python3 -y
-    - cd documentation/
-    - python3 -m venv .venv/
-    - source .venv/bin/activate
-    - pip3 install -r requirements.txt
-  script:
-    - cd documentation/
-    - source .venv/bin/activate
-    - make html
-    - tar cf $CI_DOCS_ARCHIVE -C build/html/ .
-    - mv build/ ../.
-    - mv $CI_DOCS_ARCHIVE ../.
-  artifacts:
-    paths:
-      - build
-      - $CI_DOCS_ARCHIVE
-
-docs-deploy:
-  image: debian:trixie
-  variables:
-    GIT_STRATEGY: none
-  dependencies:
-    - docs-build
-  stage: deploy
-  tags: ['docs']
-  script: echo 'Deploying docs'
-  artifacts:
-    paths:
-      - $CI_DOCS_ARCHIVE
 
