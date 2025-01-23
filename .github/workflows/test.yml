@@ -1,0 +1,53 @@
+name: test
+
+concurrency:
+  group: ${{ github.repository }}-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  TestPCBooth:
+    runs-on: ubuntu-latest
+    container:
+        image: debian:bookworm
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+        - name: Install dependencies
+          run: |
+            echo 'deb http://deb.debian.org/debian bookworm-backports main' > /etc/apt/sources.list.d/backports.list
+            apt -qqy update
+            apt -qqy install install git pip python3.11 python3-poetry python3.11-venv pipx libsm6 ffmpeg 
+
+        - uses: actions/checkout@v4
+          with:
+            submodules: false
+            fetch-depth: 0
+
+        - name: Install pcbooth
+          run: |
+            git config --global --add safe.directory ${GITHUB_WORKSPACE}
+            python3.11 -m pipx install .
+
+
+        - name: Test 
+          run: |
+            PATH=$PATH:~/.local/bin
+            pcbooth -u
+            echo >> blendcfg.yaml; cat sample/tests.yaml >> blendcfg.yaml
+            pcbooth -b sample/*.blend -c static_test
+            pcbooth -b sample/*.blend -c flip_transition_test
+
+
+        - uses: actions/upload-artifact@v3
+          with:
+            name: HW project artifacts
+            path: |
+              ./renders
+              ./animations
+
+
