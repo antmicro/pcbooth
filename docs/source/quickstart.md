@@ -11,44 +11,12 @@ This guide uses following tool pipeline to prepare the base PCB model:
 git clone https://github.com/antmicro/jetson-orin-baseboard.git
 ```
 
-## Clone the 3D model library
-
-```bash
-git clone https://github.com/antmicro/hardware-components.git
-```
-
-In order for the library to be visible by `picknblend`, specify it in the environment variable `MODEL_LIBRARY_PATHS`:
-
-```bash
-export MODEL_LIBRARY_PATHS=path/to/library/directory/hardware-components/
-```
-
-Alternatively, you can provide this path in the `blendcfg.yaml` file:
-
-```bash
-MODEL_LIBRARY_PATHS:
-      - path/to/library/directory/hardware-components/
-```
-
 ## Generate PCB Blender model
 
-Use the [`gerber2blend`](https://github.com/antmicro/gerber2blend) tool to generate a Blender model of the PCB:
-
-```bash
-cd jetson-orin-baseboard
-gerber2blend
-```
-
+Use the [`gerber2blend`](https://github.com/antmicro/gerber2blend) tool to generate a Blender model of the PCB.
 Refer to `gerber2blend`'s [Quick start](https://antmicro.github.io/gerber2blend/quickstart.html) guide for detailed instructions.
 
-## Populate generated model with components from 3D model library
-
-Use the [`picknblend`](https://github.com/antmicro/antmicro-picknblend) tool to populate the PCB model with components:
-
-```bash
-picknblend
-```
-
+Then use the [`picknblend`](https://github.com/antmicro/picknblend) tool to populate the PCB model with components.
 Refer to `picknblend`'s [Quick start](https://antmicro.github.io/picknblend/quickstart.html) guide for detailed instructions.
 
 ## Prepare renders of the PCB
@@ -59,7 +27,7 @@ In order to prepare renders of the PCB, run:
 pcbooth
 ```
 
-To preview the generated `.blend` file with populated components, open it with an instance of Blender in version >=4.1.
+To preview the generated `.blend` file with added camera and environment, open it with an instance of Blender in version >=4.1.
 
 ## Prepare any renders 
 
