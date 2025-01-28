@@ -6,8 +6,9 @@ from pcbooth.modules.renderer import RendererWrapper
 import pcbooth.modules.job_utilities as ju
 import logging
 import re
-from typing import List
+from typing import List, Generator, Any
 from mathutils import Vector
+from contextlib import contextmanager
 
 
 logger = logging.getLogger(__name__)
@@ -56,6 +57,8 @@ class Stackup(pcbooth.core.job.Job):
         background = self.studio.backgrounds[0]
         camera = self.studio.cameras[0]
         components = self.studio.bottom_components + self.studio.top_components
+        if solder := bpy.data.objects.get("Solder", None):  # hide PCB model solder object if present
+            components.append(solder)
         self.studio.change_position(position)
         Background.use(background)
         camera.change_position(position)
@@ -64,6 +67,7 @@ class Stackup(pcbooth.core.job.Job):
             ju.position_override(layers, move_layers, self.studio.rendered_obj),
             ju.shadow_override(layers),
             camera.dof_override(),
+            solder_switch_override(),
         ):
             with ju.hide_override(components, hide_viewport=True):
                 camera.frame_selected(self.studio.rendered_obj)
@@ -97,3 +101,16 @@ def move_layers(layers: List[bpy.types.Object]) -> None:
         if i == 0:
             continue
         layer.delta_location = i * offset
+
+
+@contextmanager
+def solder_switch_override() -> Generator[None, Any, None]:
+    """Context manager for temporarily overriding the Solder Switch node in the PCB's main material during stackup rendering."""
+    try:
+        solder_switch_node = bpy.data.node_groups["Color_group"].nodes["Solder_Switch"]
+        solder_switch_node.inputs[0].default_value = 1.0  # type: ignore
+        yield
+    except (AttributeError, RuntimeError, KeyError):
+        pass
+    finally:
+        solder_switch_node.inputs[0].default_value = 0.0  # type: ignore

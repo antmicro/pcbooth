@@ -87,10 +87,15 @@ class Highlights(pcbooth.core.job.Job):
         Get list of components to highlight (HIGHLIGHTED list of designators or all components present if not PCB) and
         list of components to hide (HIDDEN list of designators and all linked objects).
         """
+
         rendered = set(dict.fromkeys(self.studio.top_components + self.studio.bottom_components))
         linked = {object for object in cu.get_linked() if not is_background(object)}
         hidden = {component for component in rendered if is_hidden(component, self.studio.is_pcb)} | linked
         highlighted = {component for component in rendered if is_highlighted(component, self.studio.is_pcb)} - hidden
+
+        if self.studio.is_pcb:  # hide PCB model solder object if present
+            if solder := bpy.data.objects.get("Solder", None):
+                hidden.add(solder)
 
         if not highlighted:
             logger.warning("No highlighted components found!")
