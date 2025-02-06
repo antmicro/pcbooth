@@ -1,5 +1,5 @@
 """
-Studio generation module. Handles loading rendered Blender model and configures itself according to read data. 
+Studio generation module. Handles loading rendered Blender model and configures itself according to read data.
 Adds cameras, lights and backgrounds.
 """
 
