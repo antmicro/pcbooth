@@ -26,6 +26,8 @@ def open_blendfile(blendfile: str) -> None:
     """
     logger.info(f"Opening existing file: {blendfile}")
     bpy.ops.wm.open_mainfile(filepath=blendfile)
+    if bpy.context.active_object != None and bpy.context.active_object.mode == "EDIT":
+        bpy.ops.object.mode_set(mode="OBJECT")
 
 
 def apply_all_transforms(object: bpy.types.Object) -> None:
