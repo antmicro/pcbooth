@@ -21,18 +21,18 @@ Refer to `picknblend`'s [Quick start](https://antmicro.github.io/picknblend/quic
 
 ## Prepare renders of the PCB
 
-In order to prepare renders of the PCB, run:
+In order to prepare renders of the PCB, run `pcbooth` with `demo` preset:
 
 ```bash
-pcbooth
+pcbooth -c demo
 ```
 
-To preview the generated `.blend` file with added camera and environment, open it with an instance of Blender in version >=4.1.
+This preset yields static image renders on black background using `TOP` and `PHOTO1` camera views and transition animation between the two.  
 
 ## Prepare any renders 
 
 `PCBooth` can render any model in .blend format if called with path to the model:
 
 ```bash
-pcbooth -b path/to/model.blend
+pcbooth -b path/to/model.blend -c demo
 ```

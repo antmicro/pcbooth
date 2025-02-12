@@ -64,3 +64,15 @@ demo:
   OUTPUTS: 
     - STATIC:
     - CAMERATRANSITION:
+    
+simple:
+    CAMERAS:
+        TOP: True
+    POSITIONS:
+        TOP: True
+        BOTTOM: True
+    BACKGROUNDS:
+        LIST:
+            - transparent
+    OUTPUTS:
+        - STATIC:
