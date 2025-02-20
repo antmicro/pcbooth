@@ -6,6 +6,7 @@ from os import getcwd, path
 from typing import Dict, Any
 import pcbooth.modules.file_io as fio
 import pcbooth.core.blendcfg as bcfg
+import pcbooth.core.schema as sch
 
 blendcfg: Dict[str, Any] = {}
 prj_path: str = ""
@@ -51,7 +52,10 @@ def init_global(arguments: argparse.Namespace) -> int:
 
     # Handle blendcfg when no argument is passed and proceed with script
     handle_config()
-    blendcfg = bcfg.open_blendcfg(prj_path, arguments.config_preset, pcbt_dir_path)
+
+    schema = sch.ConfigurationSchema()
+    blendcfgs = bcfg.open_blendcfg(prj_path, arguments.config_preset)
+    blendcfg = bcfg.validate_blendcfg(blendcfgs, schema)
 
     configure_paths(arguments)
     args = arguments

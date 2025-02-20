@@ -35,6 +35,7 @@ python = "3.11.*"
 bpy = "4.1"
 ruamel-yaml = "==0.18.10"
 pydantic = "2.10.5"
+marshmallow = "^3.20.1"
 
 [tool.poetry-dynamic-versioning]
 enable = true

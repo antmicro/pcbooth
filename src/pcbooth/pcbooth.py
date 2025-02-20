@@ -1,4 +1,3 @@
-import traceback
 import argparse
 import importlib
 import inspect
@@ -10,7 +9,6 @@ from typing import Any, Optional
 
 import pcbooth.core.job
 import pcbooth.modules.config as config
-import pcbooth.modules.custom_utilities as cu
 import pcbooth.core.blendcfg as blendcfg
 import pcbooth.core.log as log
 from pcbooth.modules.studio import Studio
@@ -152,6 +150,9 @@ def main() -> int:
             run_modules_for_config(config.blendcfg, studio)
         return 0
 
+    except blendcfg.BlendcfgValidationError as e:
+        logger.error("%s", str(e), exc_info=False)
+        return 1
     except Exception as e:
         logger.error("%s", str(e), exc_info=True)
         return 1
