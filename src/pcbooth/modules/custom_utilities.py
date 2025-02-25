@@ -4,9 +4,10 @@ import bpy
 from mathutils import Matrix
 from math import radians
 import logging
-from typing import List, Optional
+from typing import List, Optional, Any, Dict
 import re
 from pcbooth.modules.bounding_box import Bounds
+from treelib import Tree  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -226,3 +227,43 @@ def get_designator(object: bpy.types.Object) -> str:
     if result:
         return result.group(1)
     return ""
+
+
+def print_hierarchy() -> None:
+    """
+    Generate object and collection hierarchy output string of the currently opened .blend file and print it to console.
+    """
+    obj_map = {"CAMERA": "📽", "LIGHT": "☀︎", "MESH": "▽", "EMPTY": "⸭"}
+    col = "🗀"
+    link = " [\x1b[3mlinked\x1b[0m]"
+
+    def _get_struct(item: bpy.types.Collection) -> Dict[str, Any]:
+        """Get Blender outliner hierarchy as a dict."""
+        if isinstance(item, bpy.types.Collection):
+            struct: Dict[str, Any] = {}
+            collection_key = f"{col}  {item.name}"
+            struct[collection_key] = {}
+
+            for obj in item.objects:
+                obj_key = f"{obj_map.get(obj.type, '?')}  {obj.name}{link if obj.instance_type == 'COLLECTION' else ''}"
+                struct[collection_key][obj_key] = None
+
+            for child_collection in item.children:
+                struct[collection_key].update(_get_struct(child_collection))
+
+            return struct
+        return {}
+
+    def _make_tree(tree: Tree, data: Dict[str, Any], parent: Optional[str] = None) -> None:
+        """Create treelib Tree."""
+        for key, value in data.items():
+            tree.create_node(key, key, parent=parent)
+            if isinstance(value, dict):
+                _make_tree(tree, value, key)
+
+    logger.info(f"Legend: {obj_map}")
+    root_col = bpy.context.view_layer.layer_collection.collection
+    struct = _get_struct(root_col)
+    tree = Tree()
+    _make_tree(tree, struct)
+    logger.info("\n" + str(tree))

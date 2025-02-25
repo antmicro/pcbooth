@@ -28,8 +28,7 @@ class Studio:
         "REAR": (radians(0), radians(0), radians(180)),
     }
 
-    def __init__(self, pcb_blend_path: str):
-        cu.open_blendfile(pcb_blend_path)
+    def __init__(self) -> None:
         init_render_settings()
         set_default_compositing()
         self.collection = cu.get_collection("Studio")

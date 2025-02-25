@@ -11,6 +11,7 @@ import pcbooth.core.job
 import pcbooth.modules.config as config
 import pcbooth.core.blendcfg as blendcfg
 import pcbooth.core.log as log
+import pcbooth.modules.custom_utilities as cu
 from pcbooth.modules.studio import Studio
 
 
@@ -59,6 +60,13 @@ def parse_args() -> argparse.Namespace:
         "-u",
         "--update-config",
         help="Update local config settings with the additional ones found in the template and exit. Copy blendcfg.yaml to CWD instead if there is no CWD config file found.",
+        action="store_true",
+    )
+    parser.add_argument(
+        "-l",
+        "--list-objects",
+        dest="list",
+        help="Print Blender file object hierarchy to console, includes Objects and Collections",
         action="store_true",
     )
 
@@ -145,8 +153,13 @@ def main() -> int:
     try:
         args = parse_args()
         log.set_logging(args.debug)
+
         if config.init_global(args):
-            studio = Studio(config.pcb_blend_path)
+            cu.open_blendfile(config.pcb_blend_path)
+            if args.list:
+                cu.print_hierarchy()
+                return 0
+            studio = Studio()
             run_modules_for_config(config.blendcfg, studio)
         return 0
 

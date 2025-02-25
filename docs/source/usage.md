@@ -35,7 +35,9 @@ These directories will be created in the current directory.
 
 * `-c PRESET_NAME` - uses a selected `blendcfg` preset (see: [Custom config settings](blendcfg.md#custom-config-settings))
 * `-d` - enables debug logging
-* `-g` - copies the `blendcfg.yaml` file from template into current working directory. If there's an existing `blendcfg.yaml` file, it will be merged with the one from the template. 
+* `-u` – merges additional settings from the template into the local configuration and exits. Existing user-defined settings remain unchanged. If no `blendcfg.yaml` file exists in the current directory, it is copied from the template instead.
+* `-R` - resets the local configuration to match the template, overwriting any user-defined settings, then exits. If no `blendcfg.yaml` file exists in the current directory, it is copied from the template instead.
+* `-l` - prints source Blender model object and collection hierarchy to console  
 
 ## Rendering jobs
 
