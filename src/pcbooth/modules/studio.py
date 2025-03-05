@@ -174,7 +174,7 @@ class Studio:
         rendered_components = [object for object in rendered_col.objects]
         self._get_top_bottom_components(rendered_components)
         self.rendered_obj = cu.add_empty("_rendered_parent", children=rendered_components)
-        self.top_parent = cu.add_empty("_parent", children=scene_components)
+        self.top_parent = cu.add_empty("_parent", children=scene_components, origin_source=rendered_components)
         cu.parent_list_to_object([self.rendered_obj], self.top_parent)
 
     def _configure_as_singleobject(self, object_name: str) -> None:
@@ -184,7 +184,7 @@ class Studio:
             raise RuntimeError(f"{object_name} object could not be found in Blender model data.")
         scene_components = [object for object in bpy.data.objects]
         self._get_top_bottom_components()
-        self.top_parent = cu.add_empty("_parent", children=scene_components)
+        self.top_parent = cu.add_empty("_parent", children=scene_components, origin_source=[self.rendered_obj])
         cu.set_origin(self.rendered_obj)  # needed to correctly calculate focus
 
     def _configure_as_unknown(self) -> None:

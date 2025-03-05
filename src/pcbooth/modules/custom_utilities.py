@@ -167,11 +167,12 @@ def add_empty(
     name: str,
     target_coll: Optional[bpy.types.Collection] = None,
     children: List[bpy.types.Object] = [],
+    origin_source: List[bpy.types.Object] = [],
 ) -> bpy.types.Object:
     """
-    Add empty object to the scene. If no target collection is specified, link to root scene collection.
-    Object is placed in children bbox center (or [0,0,0] if no children present).
-    Children are linked to created object
+    Add empty object to the scene. If no target collection is specified, it will be linked to root scene collection.
+    Objects from `children` list are parented to the created empty.
+    Empty object is placed in the center point of `origin_source` objects bounding box ([0,0,0] point is used if both `origin_source` and `children` are empty).
     """
     object = bpy.data.objects.new(name, None)
     if target_coll:
@@ -179,14 +180,16 @@ def add_empty(
     else:
         bpy.context.scene.collection.objects.link(object)
 
+    if len(origin_source) == 0:
+        origin_source = children
     try:
-        with Bounds(children) as target:
+        with Bounds(origin_source) as target:
             set_origin(target.bounds)
             object.location = target.bounds.location.copy()
-        parent_list_to_object(children, object)
     except RuntimeError:
         # No vertices found
         pass
+    parent_list_to_object(children, object)
     return object
 
 
