@@ -6,7 +6,7 @@ import os
 import sys
 from pathlib import Path
 from contextlib import contextmanager
-from subprocess import run, DEVNULL, PIPE
+from subprocess import run, DEVNULL, PIPE, CalledProcessError
 from typing import Generator, Optional, List, Callable, Literal, Any
 from io import TextIOWrapper
 
@@ -131,13 +131,13 @@ def execute_cmd(
 
     stdout_val = PIPE if stdout else DEVNULL
     stderr_val = PIPE if stderr else DEVNULL
-    log = run(
-        cmd_list,
-        check=True,
-        text=True,
-        stdout=stdout_val,
-        stderr=stderr_val,
-    )
-    logger = getattr(logging, level)
-    logger(log.stdout)
-    logger(log.stderr)
+    try:
+        log = run(
+            cmd_list,
+            check=True,
+            text=True,
+            stdout=stdout_val,
+            stderr=stderr_val,
+        )
+    except CalledProcessError as err:
+        logger.error(err.stderr)

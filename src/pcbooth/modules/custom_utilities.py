@@ -27,7 +27,7 @@ def open_blendfile(blendfile: str) -> None:
     """
     logger.info(f"Opening existing file: {blendfile}")
     bpy.ops.wm.open_mainfile(filepath=blendfile)
-    if bpy.context.active_object != None and bpy.context.active_object.mode == "EDIT":
+    if bpy.context.active_object is not None and bpy.context.active_object.mode == "EDIT":
         bpy.ops.object.mode_set(mode="OBJECT")
 
 
@@ -203,12 +203,10 @@ def set_origin(object: bpy.types.Object) -> None:
 def clear_animation_data() -> None:
     """
     Remove any animation data if it was added by the job.
-    TODO: for now this will remove all existing actions, so there needs to be some way
-            to backup user predefined keyframes
     """
     logger.debug("Clearing animation data.")
-    for action in bpy.data.actions:
-        bpy.data.actions.remove(action)
+    for obj in bpy.data.objects:
+        obj.animation_data_clear()  # type: ignore
 
 
 def get_linked() -> List[bpy.types.Object]:
@@ -270,3 +268,17 @@ def print_hierarchy() -> None:
     tree = Tree()
     _make_tree(tree, struct)
     logger.info("\n" + str(tree))
+
+
+def get_keyframes() -> List[int]:
+    """Find and sort all keyframes' indexes defined in scene."""
+    frames = set()
+    for obj in bpy.context.scene.objects:
+        if obj.animation_data and obj.animation_data.action:
+            for fcurve in obj.animation_data.action.fcurves:
+                for keyframe in fcurve.keyframe_points:
+                    frame = keyframe.co[0]
+                    if frame not in frames:
+                        frames.add(int(frame))
+    sorted_frames = list(sorted(frames))
+    return sorted_frames

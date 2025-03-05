@@ -6,7 +6,6 @@ Adds cameras, lights and backgrounds.
 import bpy
 from math import radians
 from typing import List, Dict
-from mathutils import Matrix
 import logging
 
 import pcbooth.modules.config as config
@@ -29,6 +28,7 @@ class Studio:
     }
 
     def __init__(self) -> None:
+        self.set_frames()
         init_render_settings()
         set_default_compositing()
         self.collection = cu.get_collection("Studio")
@@ -46,6 +46,9 @@ class Studio:
         self.backgrounds: List[Background] = []
         self.lights: List[Light] = []
         self.positions: List[str]
+        self.animation_data: Dict[bpy.types.Object, bpy.types.Action | None] = {
+            obj: obj.animation_data.action.copy() if obj.animation_data else None for obj in bpy.data.objects  # type: ignore
+        }
 
         self._configure_model_data()
         self._configure_position()
@@ -248,3 +251,23 @@ class Studio:
         object.rotation_euler = self.presets[key]
         logger.debug(f"Moved {self.rendered_obj.name} to '{key}' position")
         cu.update_depsgraph()
+
+    def set_frames(self, user_defined: bool = False) -> None:
+        """
+        Set start and end frames based on the values from configuration file or existing keyframes.
+        When called, updates context scene start and end values as well.
+        """
+        keyframes = cu.get_keyframes()
+        if keyframes and user_defined:
+            self.frame_end = max(keyframes)
+            self.frame_start = min(keyframes)
+        else:
+            self.frame_end = config.blendcfg["RENDERER"]["FPS"]
+            self.frame_start = 1
+
+        scene = bpy.context.scene
+        scene.frame_start = self.frame_start
+        scene.frame_end = self.frame_end
+        scene.frame_set(self.frame_start)
+
+        logger.debug(f"Set current frame to {self.frame_start}")

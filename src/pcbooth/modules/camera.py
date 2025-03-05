@@ -6,7 +6,7 @@ from pcbooth.modules.bounding_box import Bounds
 import pcbooth.modules.config as config
 from math import radians
 from mathutils import Matrix
-from typing import Generator, Tuple, Dict, List, ClassVar, Any, Tuple, Optional
+from typing import Generator, Tuple, Dict, List, ClassVar, Any, Optional
 import logging
 from contextlib import contextmanager
 
@@ -204,29 +204,35 @@ class Camera:
     def add_intermediate_keyframe(
         self,
         rendered_obj: bpy.types.Object,
-        progress: float,
+        progress: Optional[float] = None,
+        frame: Optional[int] = None,
+        focus: bool = False,
         zoom_out: float = 1.0,
         frame_selected: bool = True,
     ) -> None:
         """
-        Insert intermediate keyframes for the camera at a specified fraction of the animation timeline, aligning it with the rendered object.
+        Insert intermediate keyframes for the camera at a specified fraction of the animation timeline or frame, aligning it with the rendered object.
         This ensures the object remains within the camera frame during interpolated movement. The method also allows optional adjustment of the
         camera's position by applying a zoom factor.
         """
         scene = bpy.context.scene
+        if progress is not None and frame is not None:
+            raise ValueError("Only one of 'progress' or 'frame' should be provided, not both.")
+        if progress is None and frame is None:
+            raise ValueError("Either 'frame' or 'progress' value must be provided.")
+        scene.frame_set(int(scene.frame_end * progress) if progress is not None else frame)
 
-        scene.frame_set(int(scene.frame_end * progress))
         if frame_selected:
             self.frame_selected(rendered_obj)
 
         self.object.data.sensor_width = self._sensor_zoomedout * zoom_out  # type: ignore
 
-        if config.blendcfg["SCENE"]["ORTHO_CAM"]:
+        if config.blendcfg["SCENE"]["ORTHO_CAM"] or focus:
             self.set_focus(rendered_obj)
 
         self.add_keyframe(
             scene.frame_current,
-            focus=config.blendcfg["SCENE"]["ORTHO_CAM"],
+            focus=config.blendcfg["SCENE"]["ORTHO_CAM"] or focus,
         )
 
     @contextmanager

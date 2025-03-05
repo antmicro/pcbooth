@@ -3,14 +3,11 @@
 import bpy
 import logging
 from pathlib import Path
-from typing import Callable, Optional, Collection
 
-from bpy.types import Image
 from pcbooth.modules.file_io import stdout_redirected, execute_cmd
 import pcbooth.modules.config as config
-from typing import Dict, List, Callable, Any, cast
+from typing import Dict, List, Callable, Any, cast, Optional
 from pcbooth.modules.file_io import remove_file, mkdir
-from glob import glob
 
 from re import match
 from os import listdir
@@ -175,8 +172,6 @@ def init_render_settings() -> None:
     renderer.use_file_extension = True
     renderer.use_persistent_data = True  # more memory used, faster renders
 
-    scene.frame_start = 1
-    scene.frame_end = int(config.blendcfg["RENDERER"]["FPS"])
     scene.cycles.samples = config.blendcfg["RENDERER"]["SAMPLES"]
     scene.cycles.use_denoising = True
 
@@ -356,6 +351,7 @@ class FFmpegWrapper:
         self.fps = config.blendcfg["RENDERER"]["FPS"]
         self.animation_path = config.animations_path
         self.render_path = config.renders_path
+        self.start_frame = bpy.context.scene.frame_start
 
     def _set_video_format(self, format: str) -> None:
         """Set sequencer video output format and file extension."""
@@ -367,8 +363,9 @@ class FFmpegWrapper:
         for format in self.formats:
             self._set_video_format(format)
             input_dict = {
-                "-i": f"{self.render_path}{input_file}_%04d.png",
                 "-framerate": str(self.fps),
+                "-start_number": str(self.start_frame),
+                "-i": f"{self.render_path}{input_file}_%04d.png",
                 "-s": f"{self.res_x}x{self.res_y}",
             }
             self._sequence(input_dict, output_file)

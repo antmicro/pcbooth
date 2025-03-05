@@ -9,7 +9,11 @@ from pcbooth.modules.renderer import (
 )
 from pcbooth.modules.light import Light
 from pcbooth.modules.background import Background
+from pcbooth.modules.studio import Studio
 from mathutils import Vector, Euler
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @contextmanager
@@ -184,3 +188,24 @@ def position_override(
         if rendered_obj:
             Light.update_position(rendered_obj, restore=True)
             Background.update_position(rendered_obj)
+
+
+@contextmanager
+def user_animation_override(studio: Studio) -> Generator[None, Any, None]:
+    """
+    Temporarily override PCBooth animations with user-defined keyframes from the rendered .blend file.
+    Removes any changes made within this context upon exit.
+    """
+    try:
+        for obj, data in studio.animation_data.items():
+            if not data:
+                continue
+            obj.animation_data_create()
+            obj.animation_data.action = data  # type: ignore
+        studio.set_frames(user_defined=True)
+        yield
+
+    finally:
+        studio.set_frames()
+        for obj in bpy.data.objects:
+            obj.animation_data_clear()  # type: ignore
