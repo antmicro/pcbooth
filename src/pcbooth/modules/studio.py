@@ -46,10 +46,9 @@ class Studio:
         self.backgrounds: List[Background] = []
         self.lights: List[Light] = []
         self.positions: List[str]
-        self.animation_data: Dict[bpy.types.Object, bpy.types.Action | None] = {
-            obj: obj.animation_data.action.copy() if obj.animation_data else None for obj in bpy.data.objects  # type: ignore
-        }
+        self.animation_data: Dict[bpy.types.Object, bpy.types.Action | None]
 
+        self._load_animation_data()
         self._configure_model_data()
         self._configure_position()
 
@@ -121,6 +120,16 @@ class Studio:
         """Enable or disable additional studio effects"""
         if not config.blendcfg["SCENE"]["LED_ON"]:
             disable_emission_nodes()
+
+    def _load_animation_data(self) -> None:
+        """Prepare animation data backup."""
+        data: Dict[bpy.types.Object, bpy.types.Action | None] = {}
+        for obj in bpy.data.objects:
+            if obj.animation_data and obj.animation_data.action:
+                data[obj] = obj.animation_data.action.copy()  # type:ignore
+            else:
+                data[obj] = None
+        self.animation_data = data
 
     def _configure_model_data(self) -> None:
         """Assign configurational attributes' values based on loaded model contents."""
