@@ -4,7 +4,7 @@ import bpy
 from mathutils import Matrix
 from math import radians
 import logging
-from typing import List, Optional, Any, Dict
+from typing import List, Optional, Any, Dict, cast
 import re
 from pcbooth.modules.bounding_box import Bounds
 from treelib import Tree  # type: ignore
@@ -100,11 +100,14 @@ def get_top_parent(object: bpy.types.Object) -> bpy.types.Object:
     return object
 
 
-def get_root_object(object: bpy.types.Object) -> bpy.types.Object | None:
-    """Get source object of the linked nested object structure"""
-    library_name = object.library.name.replace(".blend", "")
-    lib_obj = bpy.data.objects.get(library_name)
-    return lib_obj
+def get_library_instances(obj: bpy.types.Object) -> List[bpy.types.Object]:
+    """Get instances of objects belonging to specified object using depsgraph as a lookup."""
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    return [
+        cast(bpy.types.Object, dg_obj.object.original)
+        for dg_obj in depsgraph.object_instances
+        if dg_obj.parent and dg_obj.parent.original == obj
+    ]
 
 
 def parent_list_to_object(
@@ -180,16 +183,13 @@ def add_empty(
     else:
         bpy.context.scene.collection.objects.link(object)
 
-    if len(origin_source) == 0:
-        origin_source = children
-    try:
-        with Bounds(origin_source) as target:
+    if children:
+        if not origin_source:
+            origin_source = children
+        with Bounds(children) as target:
             set_origin(target.bounds)
             object.location = target.bounds.location.copy()
-    except RuntimeError:
-        # No vertices found
-        pass
-    parent_list_to_object(children, object)
+        parent_list_to_object(children, object)
     return object
 
 

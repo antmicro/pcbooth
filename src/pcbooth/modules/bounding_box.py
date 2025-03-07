@@ -12,6 +12,12 @@ logger = logging.getLogger(__name__)
 BOUNDS_NAME = "_bounds"
 
 
+class BoundsVerticesCreationError(Exception):
+    """Bounds generation error."""
+
+    pass
+
+
 class Bounds:
     """
     Context manager class.
@@ -30,9 +36,8 @@ class Bounds:
     """
 
     def __init__(self, objects: List[bpy.types.Object]) -> None:
-        """
-        Initialize bounds context manager and create bounds empty object.
-        """
+        """Initialize bounds context manager and create bounds empty object."""
+
         self.objects: List[bpy.types.Object] = objects
         self.bounds: bpy.types.Object = generate_bounds(self.objects)
         self.min_z: float = self._get_min_z()
@@ -48,9 +53,7 @@ class Bounds:
         exc_value: BaseException | None,
         exc_traceback: TracebackType | None,
     ) -> None:
-        """
-        Remove bounds data from scene.
-        """
+        """Remove bounds data from scene."""
         self.clear()
 
     def _get_min_z(self) -> float:
@@ -73,34 +76,34 @@ def get_vertices(
 ) -> List[Vector]:
     """Get list of all vertices of objects passed as a list."""
     vertices = []
-    objects_list = [obj.name for obj in objects]
+    objects_list = [obj for obj in objects if not obj.is_library_indirect]
+    for obj in objects_list:
+        _bbox = []
+        if instances := cu.get_library_instances(obj):
+            _bbox = next((_get_translations_from_link(i, obj) for i in instances), [])
+        else:
+            _bbox = _get_translations_local(obj)
+        vertices.extend(_bbox)
 
-    for obj in bpy.data.objects:
-        # skip all LIGHT, CAMERA and BACKGROUND objects
-        if obj.type == "LIGHT":
-            continue
-        if obj.type == "CAMERA":
-            continue
-        if obj.library:
-            if "templates/backgrounds" in obj.library.filepath:
-                continue
-        # if object comes from linked library, use the original library as source of geometry,
-        # apply transforms from the source object then from the linked library
-        # there's no need to have the collection named the same as the file
-        # there's no need to apply transforms in the source file
-        if obj.library:
-            if lib_obj := cu.get_root_object(obj):
-                bbox_obj = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]  # type: ignore
-                bbox_lib = [lib_obj.matrix_world @ corner for corner in bbox_obj]
-                vertices.extend(bbox_lib)
-            else:
-                continue
-        elif obj.name in objects_list and obj.instance_type == "NONE":
-            bbox = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]  # type: ignore
-            vertices.extend(bbox)
     if not vertices:
-        raise RuntimeError(f"No rendered object vertices found")
+        raise BoundsVerticesCreationError(f"No vertices found in children objects, can't generate Bounds.")
+
     return vertices
+
+
+def _get_translations_from_link(obj: bpy.types.Object, lib_obj: bpy.types.Object) -> List[Vector]:
+    """
+    Get matrix world translations from the local object and apply it to object's bounding box vertices,
+    then apply translations from the linked source.
+    """
+    bbox_obj_verts = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]  # type: ignore
+    bbox_lib_verts = [lib_obj.matrix_world @ corner for corner in bbox_obj_verts]
+    return bbox_lib_verts
+
+
+def _get_translations_local(obj: bpy.types.Object) -> List[Vector]:
+    """Get matrix world translations from the local object and apply it to object's bounding box vertices."""
+    return [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]  # type: ignore
 
 
 def generate_bbox(objects: List[bpy.types.Object]) -> bpy.types.Object:
@@ -116,9 +119,7 @@ def generate_bbox(objects: List[bpy.types.Object]) -> bpy.types.Object:
 
 
 def generate_bounds(objects: List[bpy.types.Object]) -> bpy.types.Object:
-    """
-    Generate EMPTY object out of cloud of vertices using both locally added and linked objects.
-    """
+    """Generate EMPTY object out of cloud of vertices using both locally added and linked objects."""
     vertices = get_vertices(objects)
     obj = generate_mesh(vertices)
 
