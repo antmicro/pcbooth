@@ -150,6 +150,19 @@ This rendering job is only compatible with `gerber2blend` output PCB models.
 
 ````
 
+````{tab} ANIMATION
+
+Animation rendering job.
+
+This module handles rendering animation from keyframes that are predefined by user and saved within rendered .blend file.
+It supports using various camera angles and selected backgrounds.
+
+Yields renders named <camera_angle><position initial>_<background name>_animation e.g. rightT_paper_black_animation.webm, for each combination.
+
+```{video} img/animation.webm
+:align: center
+
+````
 ## Model types
 
 `PCBooth` will recognize model types based on found objects' structures or assign it based on values stored in the `blendcfg.yaml` file. 
