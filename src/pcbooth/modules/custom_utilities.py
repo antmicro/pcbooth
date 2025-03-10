@@ -74,7 +74,7 @@ def apply_display_rot(object: bpy.types.Object, display_rot: int) -> None:
     DISPLAY_ROT property can be used to ensure the model appears in upright position on render (usually when looking at the marking).
     """
     logger.info(f"Rotating model using DISPLAY_ROT property ({display_rot}deg)")
-    rotation = radians(display_rot)
+    rotation = radians(int(display_rot))
     object.rotation_euler = [0, 0, rotation]
     apply_all_transforms(object)
 

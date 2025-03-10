@@ -195,7 +195,7 @@ class Studio:
         if not self.rendered_obj:
             raise RuntimeError(f"{object_name} object could not be found in Blender model data.")
         scene_components = [object for object in bpy.data.objects]
-        self._get_top_bottom_components()
+        self._get_top_bottom_components(scene_components)
         self.top_parent = cu.add_empty("_parent", children=scene_components, origin_source=[self.rendered_obj])
         cu.set_origin(self.rendered_obj)  # needed to correctly calculate focus
 
