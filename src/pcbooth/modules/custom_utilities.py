@@ -30,6 +30,9 @@ def open_blendfile(blendfile: str) -> None:
     if bpy.context.active_object is not None and bpy.context.active_object.mode == "EDIT":
         bpy.ops.object.mode_set(mode="OBJECT")
 
+    if not bpy.data.objects:
+        raise RuntimeError("No objects found in the .blend file, aborting.")
+
 
 def apply_all_transforms(object: bpy.types.Object) -> None:
     """Apply all translations to specified object"""
