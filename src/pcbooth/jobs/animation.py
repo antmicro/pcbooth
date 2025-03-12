@@ -20,6 +20,10 @@ class Animation(Job):
 
     def iterate(self) -> None:
         """Main loop of the module to be run within execute() method."""
+        if not any(self.studio.animation_data.values()):
+            logger.warning("There's no user-defined actions in this .blend file, nothing to render within this job.")
+            return
+
         with ju.user_animation_override(self.studio):
             ffmpeg = FFmpegWrapper()
             renderer = RendererWrapper()

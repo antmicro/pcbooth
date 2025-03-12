@@ -197,15 +197,14 @@ def user_animation_override(studio: Studio) -> Generator[None, Any, None]:
     Removes any changes made within this context upon exit.
     """
     try:
-        for obj, data in studio.animation_data.items():
+        for bl_id, data in studio.animation_data.items():
             if not data:
                 continue
-            obj.animation_data_create()
-            obj.animation_data.action = data  # type: ignore
-        studio.set_frames(user_defined=True)
+            bl_id.animation_data_create()
+            bl_id.animation_data.action = data.original  # type: ignore
+        studio.set_frames()
         yield
 
     finally:
-        studio.set_frames()
-        for obj in bpy.data.objects:
-            obj.animation_data_clear()  # type: ignore
+        studio.set_frames(default=True)
+        studio.clear_animation_data()

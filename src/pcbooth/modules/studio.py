@@ -5,7 +5,7 @@ Adds cameras, lights and backgrounds.
 
 import bpy
 from math import radians
-from typing import List, Dict
+from typing import List, Dict, Tuple
 import logging
 
 import pcbooth.modules.config as config
@@ -46,7 +46,7 @@ class Studio:
         self.backgrounds: List[Background] = []
         self.lights: List[Light] = []
         self.positions: List[str]
-        self.animation_data: Dict[bpy.types.Object, bpy.types.Action | None]
+        self.animation_data: Dict[bpy.types.ID, bpy.types.Action | None]
 
         self._load_animation_data()
         self._configure_model_data()
@@ -123,13 +123,16 @@ class Studio:
 
     def _load_animation_data(self) -> None:
         """Prepare animation data backup."""
-        data: Dict[bpy.types.Object, bpy.types.Action | None] = {}
-        for obj in bpy.data.objects:
-            if obj.animation_data and obj.animation_data.action:
-                data[obj] = obj.animation_data.action.copy()  # type:ignore
+        depsgraph = bpy.context.evaluated_depsgraph_get()
+        backup_data: Dict[bpy.types.ID, bpy.types.Action | None] = {}
+        for bl_id in depsgraph.ids:
+            data = getattr(bl_id, "animation_data", None)
+            if data and data.action:
+                backup_data[bl_id.original] = data.action.copy()  # type:ignore
             else:
-                data[obj] = None
-        self.animation_data = data
+                backup_data[bl_id.original] = None
+        self.animation_data = backup_data
+        self.clear_animation_data()
 
     def _configure_model_data(self) -> None:
         """Assign configurational attributes' values based on loaded model contents."""
@@ -261,22 +264,36 @@ class Studio:
         logger.debug(f"Moved {self.rendered_obj.name} to '{key}' position")
         cu.update_depsgraph()
 
-    def set_frames(self, user_defined: bool = False) -> None:
+    def set_frames(self, default: bool = False) -> None:
         """
         Set start and end frames based on the values from configuration file or existing keyframes.
         When called, updates context scene start and end values as well.
         """
-        keyframes = cu.get_keyframes()
-        if keyframes and user_defined:
-            self.frame_end = max(keyframes)
-            self.frame_start = min(keyframes)
-        else:
-            self.frame_end = config.blendcfg["RENDERER"]["FPS"]
-            self.frame_start = 1
+        keyframes = self._get_keyframe_range(default)
+        self.frame_start = keyframes[0]
+        self.frame_end = keyframes[1]
 
         scene = bpy.context.scene
         scene.frame_start = self.frame_start
         scene.frame_end = self.frame_end
         scene.frame_set(self.frame_start)
 
-        logger.debug(f"Set current frame to {self.frame_start}")
+        logger.debug(f"Set frames: start={self.frame_start}, end={self.frame_end}, current={self.frame_start}")
+
+    def _get_keyframe_range(self, default: bool) -> Tuple[int, int]:
+        """
+        Get keyframe range from all keyframes defined in loaded animation data or based on default config values.
+        """
+        if not hasattr(self, "animation_data") or not any(self.animation_data.values()) or default:
+            return (1, config.blendcfg["RENDERER"]["FPS"])
+
+        x = min([action.frame_range.x for action in self.animation_data.values() if action])
+        y = max([action.frame_range.y for action in self.animation_data.values() if action])
+        return (int(x), int(y))
+
+    @staticmethod
+    def clear_animation_data() -> None:
+        """Clear existing animation data. This leaves Studio backup animation data intact if it's been loaded."""
+        depsgraph = bpy.context.evaluated_depsgraph_get()
+        for bl_id in depsgraph.ids:
+            bl_id.original.animation_data_clear()  # type: ignore

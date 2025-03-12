@@ -4,7 +4,6 @@ import logging
 import bpy
 from abc import ABC, abstractmethod
 from pcbooth.modules.studio import Studio
-from pcbooth.modules.custom_utilities import clear_animation_data
 from copy import copy
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
@@ -38,7 +37,7 @@ class Job(ABC):
         self._setup(studio)
         if not self.report():
             self.iterate()
-        clear_animation_data()
+        studio.clear_animation_data()
 
     def _setup(self, studio: Studio) -> None:
         """
