@@ -16,6 +16,7 @@ class Animation(Job):
 
     Yields renders named <camera_angle><position initial>_<background name>_animation
     e.g. rightT_paper_black_animation.webm, for each combination.
+    '_reversed' suffix is added for reversed animations.
     """
 
     def iterate(self) -> None:
@@ -40,9 +41,13 @@ class Animation(Job):
                         self.add_studio_keyframes(camera)
 
                         filename = f"{camera.name.lower()}{position[0]}_{background.name}_animation"
+                        rev_filename = f"{camera.name.lower()}{position[0]}_{background.name}_animation_reversed"
                         renderer.render_animation(camera.object, filename)
 
                         ffmpeg.run(filename, filename)
+                        ffmpeg.reverse(filename, rev_filename)
+                        ffmpeg.thumbnail(filename)
+                        ffmpeg.thumbnail(rev_filename)
                         self.update_status()
 
             ffmpeg.clear_frames()
