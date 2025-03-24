@@ -269,7 +269,7 @@ class Studio:
         Set start and end frames based on the values from configuration file or existing keyframes.
         When called, updates context scene start and end values as well.
         """
-        keyframes = self._get_keyframe_range(default)
+        keyframes = self.get_keyframe_range(default)
         self.frame_start = keyframes[0]
         self.frame_end = keyframes[1]
 
@@ -280,7 +280,7 @@ class Studio:
 
         logger.debug(f"Set frames: start={self.frame_start}, end={self.frame_end}, current={self.frame_start}")
 
-    def _get_keyframe_range(self, default: bool) -> Tuple[int, int]:
+    def get_keyframe_range(self, default: bool) -> Tuple[int, int]:
         """
         Get keyframe range from all keyframes defined in loaded animation data or based on default config values.
         """
@@ -290,6 +290,10 @@ class Studio:
         x = min([action.frame_range.x for action in self.animation_data.values() if action])
         y = max([action.frame_range.y for action in self.animation_data.values() if action])
         return (int(x), int(y))
+
+    def add_studio_keyframes(self, camera: Camera) -> None:
+        for frame in range(self.frame_start, self.frame_end):
+            camera.add_intermediate_keyframe(rendered_obj=self.top_parent, frame=frame, frame_selected=True, focus=True)
 
     @staticmethod
     def clear_animation_data() -> None:

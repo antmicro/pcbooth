@@ -1,12 +1,13 @@
 """Class representing a single module of the pipeline."""
 
 import logging
-import bpy
 from abc import ABC, abstractmethod
 from pcbooth.modules.studio import Studio
+from pcbooth.modules.job_utilities import user_animation_override
 from copy import copy
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Set, Literal, List
 from pydantic import BaseModel
+from contextlib import nullcontext
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +27,6 @@ class Job(ABC):
         self._iter: int = 0
         self._total: int = 1
         self.studio: Studio
-        self._actions_backup: List[bpy.types.Action] = []
         self.params = self._get_params(params)
 
     def execute(self, studio: Studio) -> None:
@@ -117,3 +117,59 @@ class Job(ABC):
             return 1
 
         return 0
+
+
+_DEFAULT_FRAMES = ["start", "end"]
+
+
+class UserAnimationJob(Job):
+    """
+    Represents a single module of the pipeline with user-defined keyframes support.
+    Runs within user_animation_override context.
+    """
+
+    class ParameterSchema(BaseModel):
+        """
+        Pydantic schema class for optional job parameters.
+        Overwrite this in deriving classes to add their own parameters.
+        """
+
+        FRAMES: List[Literal["start", "end"] | int] = []
+
+    def execute(self, studio: Studio) -> None:
+        """
+        Execute the current module.
+        Errors during execution can be returned by raising an exception.
+        """
+        self._setup(studio)
+        with self.context:
+            self._parse_frames()
+            if not self.report():
+                self.iterate()
+        studio.clear_animation_data()
+
+    def _setup(self, studio: Studio) -> None:
+        """Load and print job parameters read from Studio instance."""
+        super()._setup(studio)
+        self.context = (
+            user_animation_override(self.studio) if self.params.get("FRAMES", _DEFAULT_FRAMES) else nullcontext()
+        )
+
+    def get_frame_suffix(self, frame: int) -> str:
+        """Get frame suffix string, can be used to add to filenames of renders."""
+        if not self.params.get("FRAMES", _DEFAULT_FRAMES):
+            return ""
+
+        suffix_map = {max(self.frames): "_end", min(self.frames): "_start"}
+        return suffix_map.get(frame, f"_{frame:04d}")
+
+    def _parse_frames(self) -> None:
+        """Parse FRAMES optional parameter into set of integers, changes 'start' and 'end' into corresponding first and last found keyframe."""
+
+        frames = self.params.get("FRAMES", _DEFAULT_FRAMES)
+        self.has_animation_data = True
+        if not frames:
+            self.has_animation_data = False
+            frames = ["start"]
+        frame_map = {"start": self.studio.frame_start, "end": self.studio.frame_end}
+        self.frames = {frame_map.get(frame, frame) for frame in frames}
