@@ -157,11 +157,16 @@ class UserAnimationJob(Job):
 
     def get_frame_suffix(self, frame: int) -> str:
         """Get frame suffix string, can be used to add to filenames of renders."""
-        if not self.params.get("FRAMES", _DEFAULT_FRAMES):
+        frames = self.params.get("FRAMES", _DEFAULT_FRAMES)
+        if not frames:
             return ""
-
-        suffix_map = {max(self.frames): "_end", min(self.frames): "_start"}
-        return suffix_map.get(frame, f"_{frame:04d}")
+        end_frame = max(self.frames)
+        start_frame = min(self.frames)
+        if frame == end_frame and "end" in frames:
+            return "_end"
+        elif frame == start_frame and "start" in frames:
+            return "_start"
+        return f"_{frame:04d}"
 
     def _parse_frames(self) -> None:
         """Parse FRAMES optional parameter into set of integers, changes 'start' and 'end' into corresponding first and last found keyframe."""
