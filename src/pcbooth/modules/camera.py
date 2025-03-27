@@ -228,7 +228,8 @@ class Camera:
         self.object.data.sensor_width = self._sensor_zoomedout * zoom_out  # type: ignore
 
         if config.blendcfg["SCENE"]["ORTHO_CAM"] or focus:
-            self.set_focus(rendered_obj)
+            with Bounds(cu.select_all(rendered_obj)) as target:
+                self.set_focus(target.bounds)
 
         self.add_keyframe(
             scene.frame_current,

@@ -89,6 +89,8 @@ class Studio:
         self.cameras = [cam for cam in Camera.objects if cam.name in cfg_cameras]
         self.positions = [pos for pos in Studio.presets if pos in cfg_pos]
         self.change_position("TOP")
+        for camera in Camera.objects:
+            camera.change_position("TOP")
 
     def _add_backgrounds(self) -> None:
         Background.add_collection()
@@ -108,11 +110,11 @@ class Studio:
 
     def _add_lights(self) -> None:
         Light.add_collection()
-        Light.bind_to_object(self.top_parent)
 
         for light_name in Light.presets:
             Light(light_name, *Light.presets[light_name])
 
+        Light.update(self.top_parent)
         logger.info(f"Added {len(Light.objects)} lights to Studio: {[light.object.name for light in Light.objects]}")
         self.lights = Light.objects
 
@@ -127,10 +129,14 @@ class Studio:
         backup_data: Dict[bpy.types.ID, bpy.types.Action | None] = {}
         for bl_id in depsgraph.ids:
             data = getattr(bl_id, "animation_data", None)
-            if data and data.action:
-                backup_data[bl_id.original] = data.action.copy()  # type:ignore
-            else:
-                backup_data[bl_id.original] = None
+            backup_data[bl_id.original] = None
+            if not data or not data.action:
+                continue
+            if isinstance(bl_id.original, bpy.types.Object):
+                cu.anim_to_deltas(bl_id.original)
+            data = getattr(bl_id, "animation_data", None)
+            backup_data[bl_id.original] = data.action.copy()  # type:ignore
+
         self.animation_data = backup_data
         self.clear_animation_data()
 
@@ -259,8 +265,7 @@ class Studio:
         """
         Move rendered_object to position saved in dictionary.
         """
-        object = cu.get_top_parent(self.rendered_obj)
-        object.rotation_euler = self.presets[key]
+        self.top_parent.rotation_euler = self.presets[key]
         logger.debug(f"Moved {self.rendered_obj.name} to '{key}' position")
         cu.update_depsgraph()
 
@@ -292,8 +297,19 @@ class Studio:
         return (int(x), int(y))
 
     def add_studio_keyframes(self, camera: Camera) -> None:
-        for frame in range(self.frame_start, self.frame_end):
-            camera.add_intermediate_keyframe(rendered_obj=self.top_parent, frame=frame, frame_selected=True, focus=True)
+        """Add keyframes to studio objects on every frame from the user animation."""
+        for frame in range(self.frame_start, self.frame_end + 1):
+            bpy.context.scene.frame_set(frame)
+            Light.update(self.top_parent)
+            Light.keyframe_all(frame)
+
+            Background.update_position(self.top_parent)
+            Background.keyframe_all(frame)
+
+            camera.add_intermediate_keyframe(
+                rendered_obj=self.rendered_obj, frame=frame, frame_selected=True, focus=True
+            )
+        bpy.context.scene.frame_set(self.frame_start)
 
     @staticmethod
     def clear_animation_data() -> None:

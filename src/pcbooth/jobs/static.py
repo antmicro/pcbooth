@@ -1,6 +1,7 @@
 from pcbooth.core.job import UserAnimationJob
 from pcbooth.modules.background import Background
 from pcbooth.modules.renderer import RendererWrapper
+from pcbooth.modules.light import Light
 import logging
 import bpy
 
@@ -32,6 +33,7 @@ class Static(UserAnimationJob):
         for position in self.studio.positions:
             self.studio.change_position(position)
             Background.update_position(self.studio.top_parent)
+            Light.update(self.studio.top_parent)
             for background in self.studio.backgrounds:
                 Background.use(background)
                 for camera in self.studio.cameras:

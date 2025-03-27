@@ -5,8 +5,6 @@ from math import radians
 from typing import List, Tuple, Dict, ClassVar, Optional
 import logging
 
-from bpy.types import Object
-
 import pcbooth.modules.config as config
 import pcbooth.modules.custom_utilities as cu
 from pcbooth.modules.bounding_box import Bounds
@@ -99,15 +97,18 @@ def disable_emission_nodes() -> None:
 class Light:
     objects: ClassVar[List["Light"]] = []
     collection: bpy.types.Collection
-    presets: Dict[str, Tuple[Tuple[float, float, float], tuple[float, float, float], float]] = {}
-    obj_y: float = 0.0
-    obj_x: float = 0.0
+    presets: Dict[str, Tuple[Tuple[float, float, float], tuple[float, float, float], float]] = {
+        "TOP": ((radians(0), radians(0), radians(0)), (0.0, 0.0, 0.0), 1.0),
+        "BACK": (
+            (radians(-25), radians(0), radians(0)),
+            (0.0, 0.5, 0.0),
+            0.66,
+        ),
+    }
 
     @classmethod
     def add_collection(cls) -> None:
-        """
-        Create new Lights collection, configures HDRI.
-        """
+        """Create new Lights collection, configures HDRI."""
         studio = cu.get_collection("Studio")
         collection = cu.get_collection("Lights", studio)
         cls.collection = collection
@@ -123,40 +124,43 @@ class Light:
         return None
 
     @classmethod
-    def bind_to_object(cls, object: bpy.types.Object) -> None:
-        """
-        Bind Light class to rendered object and calculate preset positions.
-        This way they can be adjusted proportionally to rendered object size.
-        """
-        with Bounds(cu.select_all(object)) as target:
-            cls.obj_x = target.bounds.dimensions.x
-            cls.obj_y = target.bounds.dimensions.y
-            z_coord = calculate_z_coordinate(target.max_z, cls.obj_x, cls.obj_y)
+    def update(cls, obj: bpy.types.Object) -> None:
+        """Update position and power of all lights based on highest point of rendered object and its dimensions."""
+        with Bounds(cu.select_all(obj)) as target:
+            cu.set_origin(target.bounds)
+            obj_x = target.bounds.dimensions.x
+            obj_y = target.bounds.dimensions.y
+            z_coord = calculate_z_coordinate(target.max_z, obj_x, obj_y)
+            offset = (target.bounds.location.x, target.bounds.location.y, z_coord)
+            for lt in cls.objects:
+                pos_preset = cls.presets[lt.name][1]
+                intensity_preset = cls.presets[lt.name][2]
+                dimensions = target.bounds.dimensions.to_tuple()
+                new_pos = tuple(pos * dim for pos, dim in zip(pos_preset, dimensions, strict=True))
+                lt.object.location = tuple(pos + offset for pos, offset in zip(new_pos, offset, strict=True))
+                logger.debug(f"Light `{lt.name}` moved to: {lt.object.location}")
 
-        # presets include rotation tuple, location tuple, internal intensity
-        cls.presets = {
-            "TOP": ((radians(0), radians(0), radians(0)), (0.0, 0.0, z_coord), 1.0),
-            "BACK": (
-                (radians(-25), radians(0), radians(0)),
-                (0.0, cls.obj_y / 2, z_coord),
-                0.66,
-            ),
-        }
+                config_intensity = config.blendcfg["SCENE"]["LIGHTS_INTENSITY"] * intensity_preset
+                lt.object.data.energy = calculate_light_intensity(config_intensity, obj_x, obj_y)  # type: ignore
+
+                light_size = calculate_light_size(obj_x, obj_y)
+                lt.object.data.size = light_size[0]  # type: ignore
+                lt.object.data.size_y = light_size[1]  # type: ignore
+        cu.update_depsgraph()
 
     @classmethod
-    def update_position(cls, object: bpy.types.Object, restore: bool = False) -> None:
-        """Update position (Z coordinate) of all added lights in relation to current highest point of rendered object"""
-        if restore:
-            for lt in cls.objects:
-                lt.object.rotation_euler = cls.presets[lt.name][0]
-                lt.object.location = cls.presets[lt.name][1]
-        else:
-            with Bounds(cu.select_all(object)) as target:
-                z_coord = calculate_z_coordinate(target.max_z, cls.obj_x, cls.obj_y)
-            for lt in cls.objects:
-                lt.object.location.z = z_coord
-        logger.debug(f"Lights moved to Z: {lt.object.location.z}")
-        cu.update_depsgraph()
+    def keyframe_all(cls, frame: int) -> None:
+        """Keyframe all Light objects."""
+        for lt in cls.objects:
+            lt.add_keyframe(frame)
+
+    def add_keyframe(self, frame: int) -> None:
+        """Keyframe Light settings."""
+        self.object.keyframe_insert(data_path="rotation_euler", frame=frame)
+        self.object.keyframe_insert(data_path="location", frame=frame)
+        self.object.data.keyframe_insert(data_path="energy", frame=frame)  # type: ignore
+        self.object.data.keyframe_insert(data_path="size", frame=frame)  # type: ignore
+        self.object.data.keyframe_insert(data_path="size_y", frame=frame)  # type: ignore
 
     def __init__(
         self,
@@ -166,13 +170,7 @@ class Light:
         intensity: float,
     ):
         if not Light.collection:
-            raise ValueError(
-                f"Lights collection is not added, call add_collection class method before creating an instance."
-            )
-        if not Light.presets:
-            raise ValueError(
-                f"Lights presets are not calculated, call bind_to_object class method before creating an instance."
-            )
+            Light.add_collection()
 
         self.object: bpy.types.Object = self._add(name, rotation, location, intensity)
         self.name = name
@@ -184,21 +182,12 @@ class Light:
         location: Tuple[float, float, float],
         intensity: float,
     ) -> bpy.types.Object:
-        """
-        Create light object.
-        """
+        """Create light object."""
         light_name = "light_" + name.lower()
         light = bpy.data.lights.new(light_name, type="AREA")
         light.spread = radians(140)  # type: ignore
         light.color = cu.hex_to_rgb(config.blendcfg["SCENE"]["LIGHTS_COLOR"])
         light.shape = "RECTANGLE"  # type: ignore
-
-        config_intensity = config.blendcfg["SCENE"]["LIGHTS_INTENSITY"] * intensity
-        light.energy = calculate_light_intensity(config_intensity, Light.obj_x, Light.obj_y)  # type: ignore
-
-        light_size = calculate_light_size(Light.obj_x, Light.obj_y)
-        light.size = light_size[0]  # type: ignore
-        light.size_y = light_size[1]  # type: ignore
 
         object = bpy.data.objects.new(light_name, light)
         object.rotation_euler = rotation

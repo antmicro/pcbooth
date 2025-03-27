@@ -197,6 +197,7 @@ def add_empty(
 
 
 def set_origin(object: bpy.types.Object) -> None:
+    bpy.ops.object.select_all(action="DESELECT")
     object.select_set(True)
     bpy.context.view_layer.objects.active = object
     bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY", center="BOUNDS")
@@ -262,3 +263,11 @@ def print_hierarchy() -> None:
     tree = Tree()
     _make_tree(tree, struct)
     logger.info("\n" + str(tree))
+
+
+def anim_to_deltas(obj: bpy.types.Object) -> None:
+    """Transform objects LocRotScale animations to delta animations."""
+    bpy.ops.object.select_all(action="DESELECT")
+    obj.select_set(True)
+    bpy.ops.object.anim_transforms_to_deltas()
+    obj.select_set(False)

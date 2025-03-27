@@ -40,7 +40,7 @@ class Background:
 
     @classmethod
     def update_position(cls, object: bpy.types.Object) -> None:
-        """Update position of all imported backgrounds in relation to current lowest point of rendered object"""
+        """Update position of all imported backgrounds in relation to current lowest point of rendered object."""
         with Bounds(cu.select_all(object)) as target:
             for bg in cls.objects:
                 bg.object.location.z = target.min_z
@@ -49,11 +49,17 @@ class Background:
 
     @classmethod
     def use(cls, background: "Background") -> None:
-        """Make specified background enabled for rendering"""
+        """Make specified background enabled for rendering."""
         for bg in cls.objects:
             bg.object.hide_render = True
         background.object.hide_render = False
         logger.debug(f"Enabling '{background.object.name}' background for render.")
+
+    @classmethod
+    def keyframe_all(cls, frame: int) -> None:
+        """Keyframe all Background objects."""
+        for bg in cls.objects:
+            bg.object.keyframe_insert(data_path="location", frame=frame)
 
     def __init__(self, name: str = "") -> None:
         if not Background.collection:

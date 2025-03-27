@@ -3,6 +3,7 @@ import pcbooth.core.job
 from pcbooth.modules.background import Background
 from pcbooth.modules.camera import Camera
 from pcbooth.modules.renderer import FFmpegWrapper, RendererWrapper
+from pcbooth.modules.light import Light
 import logging
 from itertools import combinations
 from typing import Tuple
@@ -62,9 +63,13 @@ class FlipTransition(pcbooth.core.job.Job):
         # create rendered object keyframes
         self.studio.change_position(pair[0])
         self.studio.top_parent.keyframe_insert(data_path="rotation_euler", frame=scene.frame_start)
+        Light.update(self.studio.top_parent)
+        Light.keyframe_all(frame=scene.frame_start)
 
         self.studio.change_position(pair[1])
         self.studio.top_parent.keyframe_insert(data_path="rotation_euler", frame=scene.frame_end)
+        Light.update(self.studio.top_parent)
+        Light.keyframe_all(frame=scene.frame_end)
 
     def create_camera_keyframes(self, camera: Camera, pair: Tuple[str, str]) -> None:
         scene = bpy.context.scene

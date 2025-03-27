@@ -176,7 +176,7 @@ def position_override(
     try:
         position_func(list(components))
         if rendered_obj:
-            Light.update_position(rendered_obj)
+            Light.update(rendered_obj)
             Background.update_position(rendered_obj)
         yield
     except AttributeError:
@@ -186,7 +186,7 @@ def position_override(
             component.delta_location = Vector((0, 0, 0))  # type: ignore
             component.delta_rotation_euler = Euler((0, 0, 0))  # type: ignore
         if rendered_obj:
-            Light.update_position(rendered_obj, restore=True)
+            Light.update(rendered_obj)
             Background.update_position(rendered_obj)
 
 
@@ -197,12 +197,12 @@ def user_animation_override(studio: Studio) -> Generator[None, Any, None]:
     Removes any changes made within this context upon exit.
     """
     try:
+        studio.set_frames()
         for bl_id, data in studio.animation_data.items():
             if not data:
                 continue
             bl_id.animation_data_create()
             bl_id.animation_data.action = data.original  # type: ignore
-        studio.set_frames()
         yield
 
     finally:
