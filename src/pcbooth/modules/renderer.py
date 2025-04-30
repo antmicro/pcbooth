@@ -226,7 +226,7 @@ class RendererWrapper:
     @staticmethod
     def _save_render(image: bpy.types.Image, filepath: str) -> None:
         try:
-            image.save_render(filepath=filepath)
+            image.save(filepath=filepath)
             logger.info(f"Saved render as: {bpy.path.relpath(filepath)}")
         except (RuntimeError, AttributeError):
             logger.error(f"Save failed for {bpy.path.relpath(filepath)}")
