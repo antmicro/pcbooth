@@ -11,7 +11,6 @@ import pcbooth.modules.job_utilities as ju
 import pcbooth.modules.custom_utilities as cu
 import logging
 from typing import Set, List
-from pydantic import BaseModel
 
 
 logger = logging.getLogger(__name__)
@@ -66,21 +65,31 @@ class Masks(UserAnimationJob):
             for position in self.studio.positions:
                 self.studio.change_position(position)
                 Background.update_position(self.studio.top_parent)
+
                 for camera in self.studio.cameras:
                     camera.change_position(position)
+
                     if self.has_animation_data:
                         self.studio.add_studio_keyframes(camera)
+
                     with camera.dof_override():
                         for frame in self.frames:
                             bpy.context.scene.frame_set(frame)
+
                             for component in highlighted:
+                                if (component in self.studio.top_components and position != "TOP") or (
+                                    component in self.studio.bottom_components and position != "BOTTOM"
+                                ):
+                                    continue
+
                                 if self.params.get("FULL"):
-                                    self.render_side(component, camera, renderer, "full")
+                                    self.render_side(position, component, camera, renderer, "full")
                                 if self.params.get("COVERED"):
-                                    self.render_side(component, camera, renderer, "covered")
+                                    self.render_side(position, component, camera, renderer, "covered")
 
     def render_side(
         self,
+        side: str,
         component: bpy.types.Object,
         camera: Camera,
         renderer: RendererWrapper,
@@ -88,15 +97,10 @@ class Masks(UserAnimationJob):
     ) -> None:
         """Rendering functions called regardless of position."""
         with ju.holdout_override([component], full=state == "full"):
-            for side, components in [
-                ("TOP", self.studio.top_components),
-                ("BOTTOM", self.studio.bottom_components),
-            ]:
-                if component in components:
-                    filename = self.get_name(component, side, camera, state)
-                    renderer.render(camera.object, filename)
-                    renderer.clear_cache()
-                    self.update_status()
+            filename = self.get_name(component, side, camera, state)
+            renderer.render(camera.object, filename)
+            renderer.clear_cache()
+            self.update_status()
 
     def get_component_lists(self) -> Set[bpy.types.Object]:
         """
