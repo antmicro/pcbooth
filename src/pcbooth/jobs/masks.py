@@ -56,7 +56,6 @@ class Masks(UserAnimationJob):
             len(highlighted) * len(self.studio.cameras) * len(self.studio.positions) * len_params * len(self.frames)
         )
         self.update_status(total_renders)
-
         with (
             ju.cycles_override(setup_ultralow_cycles),
             ju.compositing_override(set_lqbw_compositing),
@@ -77,8 +76,10 @@ class Masks(UserAnimationJob):
                             bpy.context.scene.frame_set(frame)
 
                             for component in highlighted:
-                                if (component in self.studio.top_components and position != "TOP") or (
-                                    component in self.studio.bottom_components and position != "BOTTOM"
+                                if (
+                                    (component in self.studio.top_components and position != "TOP")
+                                    or (component in self.studio.bottom_components and position != "BOTTOM")
+                                    and self.studio.is_pcb
                                 ):
                                     continue
 
