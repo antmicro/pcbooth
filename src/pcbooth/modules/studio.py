@@ -230,7 +230,7 @@ class Studio:
                 cu.apply_display_rot(object, self.display_rot)
 
         if self.is_object and len(self.top_components) == 1:
-            cu.center_on_scene(object)
+            cu.center_on_scene(self.rendered_obj)
 
     def _get_top_bottom_components(self, objects: List[bpy.types.Object] = []) -> None:
         """
