@@ -7,12 +7,10 @@ import pcbooth.modules.custom_utilities as cu
 import pcbooth.modules.job_utilities as ju
 import logging
 
-from typing import Tuple, Set
+from typing import Tuple, Set, List
 
 logger = logging.getLogger(__name__)
 
-HIGHLIGHTED = ["J", "SW"]
-HIDDEN = ["R", "C", "T", "Q", "FB"]
 
 WHITE_RGB = "FFFFFF"
 HIGHLIGHT_RGB = "004C3C"
@@ -33,6 +31,15 @@ class Highlights(pcbooth.core.job.Job):
 
     Warning: Additional linked objects' materials won't be overridden - they will be hidden for rendering!
     """
+
+    class ParameterSchema(pcbooth.core.job.UserAnimationJob.ParameterSchema):
+        """
+        Pydantic schema class for optional job parameters.
+        Overwrite this in deriving classes to add their own parameters.
+        """
+
+        HIGHLIGHTED: List[str] = ["J", "SW"]
+        HIDDEN: List[str] = ["R", "C", "T", "Q", "FB"]
 
     def _override_studio(self) -> None:
         if background := Background.get("transparent"):
@@ -90,8 +97,10 @@ class Highlights(pcbooth.core.job.Job):
 
         rendered = set(dict.fromkeys(self.studio.top_components + self.studio.bottom_components))
         linked = {object for object in cu.get_linked() if not is_background(object)}
-        hidden = {component for component in rendered if is_hidden(component, self.studio.is_pcb)} | linked
-        highlighted = {component for component in rendered if is_highlighted(component, self.studio.is_pcb)} - hidden
+        hidden = {component for component in rendered if self.is_hidden(component, self.studio.is_pcb)} | linked
+        highlighted = {
+            component for component in rendered if self.is_highlighted(component, self.studio.is_pcb)
+        } - hidden
 
         if self.studio.is_pcb:  # hide PCB model solder object if present
             if solder := bpy.data.objects.get("Solder", None):
@@ -110,17 +119,31 @@ class Highlights(pcbooth.core.job.Job):
             return f"{prefix}{designator}{suffix}"
         return f"{prefix}{object.name}{suffix}{position[0]}"
 
+    def is_highlighted(self, object: bpy.types.Object, is_pcb: bool = True) -> bool:
+        """
+        Check if component is supposed to be highlighted.
+        Compares with HIGHLIGHTED list of designators.
+        If model is not PCB type, always returns True.
+        """
+        if not is_pcb:
+            return True
+        designator = cu.get_designator(object)
+        if highlighted := self.params.get("HIGHLIGHTED"):
+            return any(designator.startswith(des) for des in highlighted)
+        return False
 
-def is_highlighted(object: bpy.types.Object, is_pcb: bool = True) -> bool:
-    """
-    Check if component is supposed to be highlighted.
-    Compares with HIGHLIGHTED list of designators.
-    If model is not PCB type, always returns True.
-    """
-    if not is_pcb:
-        return True
-    designator = cu.get_designator(object)
-    return any(designator.startswith(des) for des in HIGHLIGHTED)
+    def is_hidden(self, object: bpy.types.Object, is_pcb: bool = True) -> bool:
+        """
+        Check if component is supposed to be hidden.
+        Compares with HIDDEN list of designators.
+        If model is not PCB type, always returns False.
+        """
+        if not is_pcb:
+            return False
+        designator = cu.get_designator(object)
+        if hidden := self.params.get("HIDDEN"):
+            return any(designator.startswith(des) for des in hidden)
+        return False
 
 
 def is_background(object: bpy.types.Object) -> bool:
@@ -128,18 +151,6 @@ def is_background(object: bpy.types.Object) -> bool:
     Check if component is Studio background.
     """
     return object.users_collection[0] == Background.collection
-
-
-def is_hidden(object: bpy.types.Object, is_pcb: bool = True) -> bool:
-    """
-    Check if component is supposed to be hidden.
-    Compares with HIDDEN list of designators.
-    If model is not PCB type, always returns False.
-    """
-    if not is_pcb:
-        return False
-    designator = cu.get_designator(object)
-    return any(designator.startswith(des) for des in HIDDEN)
 
 
 def add_material(name: str, rgb: str) -> bpy.types.Material:
