@@ -151,6 +151,8 @@ def setup_gpu() -> None:
         cycles_preferences.compute_device_type = device.type  # type: ignore
         logger.info(f"Enabled GPU rendering with: {device.name}.")
     except StopIteration:
+        if config.args.force_gpu:
+            raise RuntimeError("GPU rendering enforced but no GPU device available, terminating.")
         device = next((dev for dev in cycles_preferences.devices if dev.type == "CPU"), None)  # type: ignore
         bpy.context.scene.cycles.device = "CPU"
         cycles_preferences.compute_device_type = "NONE"  # type: ignore

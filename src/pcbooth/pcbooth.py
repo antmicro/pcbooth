@@ -69,6 +69,13 @@ def parse_args() -> argparse.Namespace:
         help="Print Blender file object hierarchy to console, includes Objects and Collections",
         action="store_true",
     )
+    parser.add_argument(
+        "-g",
+        "--force-gpu",
+        dest="force_gpu",
+        help="Enforce rendering on GPU device",
+        action="store_true",
+    )
 
     return parser.parse_args()
 

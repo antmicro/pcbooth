@@ -38,6 +38,7 @@ These directories will be created in the current directory.
 * `-u` – merges additional settings from the template into the local configuration and exits. Existing user-defined settings remain unchanged. If no `blendcfg.yaml` file exists in the current directory, it is copied from the template instead.
 * `-R` - resets the local configuration to match the template, overwriting any user-defined settings, then exits. If no `blendcfg.yaml` file exists in the current directory, it is copied from the template instead.
 * `-l` - prints source Blender model object and collection hierarchy to console  
+* `-g` - enforce rendering using GPU device, terminate script if no such device is available.
 
 ## Rendering jobs
 
