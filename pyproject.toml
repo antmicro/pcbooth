@@ -32,11 +32,12 @@ pcbooth = "pcbooth.pcbooth:main"
 
 [tool.poetry.dependencies]
 python = "3.11.*"
-bpy = "4.1"
+bpy = "4.4.0"
 ruamel-yaml = "==0.18.10"
 pydantic = "2.10.5"
 marshmallow = "^3.20.1"
 treelib = "1.7.0"
+numpy = ">=1.26,<2.0"
 
 [tool.poetry-dynamic-versioning]
 enable = true
