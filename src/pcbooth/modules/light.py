@@ -17,6 +17,9 @@ def load_hdri() -> None:
     """Load HDRI environmental texture and setup it's World shader."""
 
     scene = bpy.context.scene
+    if not scene.world:
+        scene.world = bpy.data.worlds.new(name="World")
+    scene.world.use_nodes = True
     nodes = scene.world.node_tree.nodes
     links = scene.world.node_tree.links
     nodes.clear()  # type: ignore
