@@ -11,6 +11,10 @@ _test_renderer: &test_renderer
 static_test:
   SETTINGS:
     <<: *test_settings
+    IMAGE_FORMAT: 
+    - PNG
+    - WEBP
+    - BMP
   RENDERER:
     <<: *test_renderer
   CAMERAS:

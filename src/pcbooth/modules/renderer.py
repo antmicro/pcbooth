@@ -200,6 +200,10 @@ class RendererWrapper:
         """
         bpy.context.scene.render.image_settings.file_format = format
         self.img_ext = bpy.context.scene.render.file_extension
+
+        if self.cache:
+            self.cache.file_format = format
+
         try:
             bpy.context.scene.render.image_settings.color_mode = "RGBA"
         except TypeError:
@@ -221,6 +225,7 @@ class RendererWrapper:
             bpy.ops.render.render(write_still=True)
         try:
             self.cache = bpy.data.images.load(self.cache_path)
+            self.cache.save(filepath=self.cache_path)
             logger.debug(f"Render completed, saved temp file to: {self.cache_path}")
         except (RuntimeError, AttributeError):
             logger.error(f"Can't load cache from {self.cache_path}")
