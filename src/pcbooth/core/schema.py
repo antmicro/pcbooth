@@ -129,6 +129,7 @@ class SceneSchema(BaseSchema):
     HDRI_INTENSITY = fields.Number()  # type: ignore
     DEPTH_OF_FIELD = fields.Bool()
     FOCAL_RATIO = FocalRatio()
+    FOCAL_LENGTH = fields.Number()  # type: ignore
     ZOOM_OUT = fields.Number()  # type: ignore
     LED_ON = fields.Bool()
     ADJUST_POS = fields.Bool()

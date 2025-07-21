@@ -27,8 +27,9 @@ default:
     LIGHTS_INTENSITY: 1.0             # area lights intensity float multiplier, set to 0.0 to disable area lights
     HDRI_INTENSITY: 0.5               # HDRI background intensity float multiplier, set to 0.0 to disable HDRI 
     DEPTH_OF_FIELD: True              # enable depth of field for all cameras
-    FOCAL_RATIO: auto                 # cameras' focal ratio for depth of field effect, (accepts fractions like f/4, 1/4 or floats, type "auto" for calculated value)
-    ZOOM_OUT: 1.05                    # cameras' zoom applied when framing rendered object (zoom_out < 1.0 - zoom in, zoom_out > 1.0 - zoom out)
+    FOCAL_RATIO: auto                 # camera's focal ratio for depth of field effect, (accepts fractions like f/4, 1/4 or floats, type "auto" for calculated value)
+    FOCAL_LENGTH: 105                 # cameras' focal length (applies when ORTHO_CAM is False)
+    ZOOM_OUT: 1.05                    # camera's zoom applied when framing rendered object (zoom_out < 1.0 - zoom in, zoom_out > 1.0 - zoom out)
     LED_ON: True                      # enable light emitting shaders on model
     ADJUST_POS: True                  # enable automatic position adjustments based on model type before rendering
     ORTHO_CAM: False                  # enables orthographic-like camera mode for all cameras

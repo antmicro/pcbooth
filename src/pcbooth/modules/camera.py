@@ -85,7 +85,7 @@ class Camera:
     def _set_defaults(self) -> None:
         """Set default camera properties"""
         self.object.data.type = "PERSP"  # type: ignore
-        self.object.data.lens = 1000 if config.blendcfg["SCENE"]["ORTHO_CAM"] else 105  # type: ignore
+        self.object.data.lens = 1000 if config.blendcfg["SCENE"]["ORTHO_CAM"] else config.blendcfg["SCENE"]["FOCAL_LENGTH"]  # type: ignore
         self.object.data.clip_start = 0.1  # type: ignore
         self.object.data.clip_end = 15000  # type: ignore # set long clip end for renders
         if config.blendcfg["SCENE"]["DEPTH_OF_FIELD"]:

@@ -38,11 +38,13 @@ Scene configuration:
 * `LIGHTS_COLOR` - area lights color in form of hex value (_AABBCC_)
 * `LIGHTS_INTENSITY` - area lights intensity in form of float value multiplier. Default is _1.0_, set to _0.0_ to disable area lights.
 * `HDRI_INTENSITY` - HDRI intensity in form of float value multiplier. Default is _0.5_, set to _0.0_ to disable HDRI.
-* `DEPTH_OF_FIELD` - boolean switch enabling depth of field for all cameras in the Blender scene
+* `DEPTH_OF_FIELD` - boolean switch enabling depth of field for all cameras in the Blender scene.
+* `FOCAL_RATIO` - sets the camera's aperture as a ratio of focal length for depth of field effect (accepts fractions like f/4, 1/4 or floats, type "auto" for calculated value).
+* `FOCAL_LENGTH` - defines the focal length of the perspective camera in millimeters. Defaults to 105 mm.
 * `LED_ON` - boolean switch enabling emissive shader nodes in the entire model. Setting this switch to _False_ will cause all LED-like elements of the model to not emit any light on render.
 * `ADJUST_POS` - boolean switch enabling automatic rotations to be applied to rendered object before renders to improve position in frame
 * `ORTHO_CAM` - boolean switch enabling increased focal length setting applied to all cameras in Blender scene resulting in orthographic-like renders.
-* `RENDERED_OBJECT` - optional string defining exact Blender object or collection to be used as rendered object. Syntax is `Object/<name of object>` or `Collection/<name of collection>`. 
+* `RENDERED_OBJECT` - optional string defining exact Blender object or collection to be used as rendered object. Syntax is `Object/<name of object>` or `Collection/<name of collection>`.
 
 ### `BACKGROUNDS`
 List of enabled backgrounds:
