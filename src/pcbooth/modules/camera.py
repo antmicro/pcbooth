@@ -48,6 +48,7 @@ class Camera:
         name: str = "",
         rotation: Tuple[float, float, float] = (0.0, 0.0, 0.0),
         camera: Optional[bpy.types.Object] = None,
+        custom: bool = False,
     ) -> None:
         if not Camera.collection:
             raise ValueError(
@@ -57,8 +58,10 @@ class Camera:
         self.positions: Dict[str, Matrix] = {}
         self.focuses: Dict[str, Tuple[float, float]] = {}
         self.name = name
+        self.custom = custom
         self.object: bpy.types.Object = self._add(name, rotation, camera)
-        self._set_defaults()
+        if not self.custom or config.blendcfg["SCENE"]["ADJUST_CAM"]:
+            self._set_defaults()
 
     def _add(
         self,
@@ -71,6 +74,7 @@ class Camera:
             # in case camera is already predefined in .blend is to be added as Camera (custom camera handling)
             object = camera
             self.name = "CUSTOM"
+            self.custom = True
         else:
             camera_name = "camera_" + name.lower()
             new_camera = bpy.data.cameras.new(camera_name)

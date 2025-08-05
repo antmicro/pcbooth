@@ -69,7 +69,7 @@ class Studio:
 
         if config.blendcfg["CAMERAS"]["CUSTOM"]:
             if camera_custom := bpy.data.objects.get("camera_custom"):
-                Camera(camera=camera_custom)
+                Camera(camera=camera_custom, custom=True)
             else:
                 logger.warning(
                     f"[CAMERAS][CUSTOM] enabled but no 'camera_custom' predefined object found in Blender file."
@@ -78,7 +78,8 @@ class Studio:
             self.change_position(position)
             with Bounds(cu.select_all(self.rendered_obj)) as target:
                 for camera in Camera.objects:
-                    camera.align(self.rendered_obj, target)
+                    if not camera.custom or config.blendcfg["SCENE"]["ADJUST_CAM"]:
+                        camera.align(self.rendered_obj, target)
                     camera.save_position(position)
                     camera.save_focus(position)
 

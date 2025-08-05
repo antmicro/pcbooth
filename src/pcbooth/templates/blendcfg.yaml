@@ -32,6 +32,7 @@ default:
     ZOOM_OUT: 1.05                    # camera's zoom applied when framing rendered object (zoom_out < 1.0 - zoom in, zoom_out > 1.0 - zoom out)
     LED_ON: True                      # enable light emitting shaders on model
     ADJUST_POS: True                  # enable automatic position adjustments based on model type before rendering
+    ADJUST_CAM: False                 # enable automatic custom camera adjustments based on model bounding box and distance from camera
     ORTHO_CAM: False                  # enables orthographic-like camera mode for all cameras
     RENDERED_OBJECT:                  # specify part of the model to be used as render object, uses "Object/<name>" or "Collection/<name>" syntax
 

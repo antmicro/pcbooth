@@ -220,7 +220,5 @@ To enable rendering using the custom camera, enable the following setting in `bl
 ```
 
 ```{note}
-A custom camera gets aligned to a selected rendered object before the render, so that the object is in the center of its FOV. This might cause its position and rotation to be altered.
+Custom camera may be aligned to an object before rendering, so that the object is in the center of camera's FOV. This feature alters camera parameters defined in input `.blend` (e.g. position, rotation, focal length, sensor size). To enable automatic custom camera adjustments use `ADJUST_CAM` switch in `blendcfg.yaml`.
 ```
-
-

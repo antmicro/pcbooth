@@ -133,6 +133,7 @@ class SceneSchema(BaseSchema):
     ZOOM_OUT = fields.Number()  # type: ignore
     LED_ON = fields.Bool()
     ADJUST_POS = fields.Bool()
+    ADJUST_CAM = fields.Bool()
     ORTHO_CAM = fields.Bool()
     RENDERED_OBJECT = DataBlock(allow_none=True)
 
