@@ -226,10 +226,10 @@ class Camera:
             raise ValueError("Either 'frame' or 'progress' value must be provided.")
         scene.frame_set(int(scene.frame_end * progress) if progress is not None else frame)
 
-        if frame_selected:
-            self.frame_selected(rendered_obj)
-
-        self.object.data.sensor_width = self._sensor_zoomedout * zoom_out  # type: ignore
+        if not self.custom:
+            if frame_selected:
+                self.frame_selected(rendered_obj)
+            self.object.data.sensor_width = self._sensor_zoomedout * zoom_out  # type: ignore
 
         if config.blendcfg["SCENE"]["ORTHO_CAM"] or focus:
             with Bounds(cu.select_all(rendered_obj)) as target:
