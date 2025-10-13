@@ -271,3 +271,13 @@ def anim_to_deltas(obj: bpy.types.Object) -> None:
     obj.select_set(True)
     bpy.ops.object.anim_transforms_to_deltas()
     obj.select_set(False)
+
+
+def set_frame_range(frame_start: int, frame_end: int) -> None:
+    """Set animation frame range to specified boundary values"""
+    scene = bpy.context.scene
+    scene.frame_start = frame_start
+    scene.frame_end = frame_end
+    scene.frame_set(frame_start)
+
+    logger.debug(f"Set frames: start={frame_start}, end={frame_end}, current={frame_start}")

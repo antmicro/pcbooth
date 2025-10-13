@@ -19,9 +19,6 @@ class Animation(UserAnimationJob):
     '_reversed' suffix is added for reversed animations.
     """
 
-    class ParameterSchema(BaseModel):
-        pass
-
     def iterate(self) -> None:
         """Main loop of the module to be run within execute() method."""
         if not any(self.studio.animation_data.values()):

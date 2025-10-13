@@ -279,12 +279,7 @@ class Studio:
         self.frame_start = keyframes[0]
         self.frame_end = keyframes[1]
 
-        scene = bpy.context.scene
-        scene.frame_start = self.frame_start
-        scene.frame_end = self.frame_end
-        scene.frame_set(self.frame_start)
-
-        logger.debug(f"Set frames: start={self.frame_start}, end={self.frame_end}, current={self.frame_start}")
+        cu.set_frame_range(self.frame_start, self.frame_end)
 
     def get_keyframe_range(self, default: bool) -> Tuple[int, int]:
         """

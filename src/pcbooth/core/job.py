@@ -4,6 +4,7 @@ import logging
 from abc import ABC, abstractmethod
 from pcbooth.modules.studio import Studio
 from pcbooth.modules.job_utilities import user_animation_override
+from pcbooth.modules.custom_utilities import set_frame_range
 from copy import copy
 from typing import List, Optional, Dict, Any, Set, Literal, List
 from pydantic import BaseModel
@@ -144,6 +145,7 @@ class UserAnimationJob(Job):
         self._setup(studio)
         with self.context:
             self._parse_frames()
+            set_frame_range(min(self.frames), max(self.frames))
             if not self.report():
                 self.iterate()
         studio.clear_animation_data()
