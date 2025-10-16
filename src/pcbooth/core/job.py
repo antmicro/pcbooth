@@ -46,6 +46,7 @@ class Job(ABC):
         """
         self._iter = 0
         self.studio = copy(studio)
+        self.studio.set_frames(default=True)
         self._override_studio()
         if self.studio.__dict__ != studio.__dict__:
             logger.warning(

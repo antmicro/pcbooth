@@ -206,5 +206,4 @@ def user_animation_override(studio: Studio) -> Generator[None, Any, None]:
         yield
 
     finally:
-        studio.set_frames(default=True)
         studio.clear_animation_data()
