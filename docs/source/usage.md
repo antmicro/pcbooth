@@ -24,25 +24,26 @@ pcbooth -b path/to/model.blend
 Resulting renders will be saved in directories specified in `blendcfg.yaml` file:
 
 ```yaml
-    RENDER_DIR: blender_renders
-    ANIMATION_DIR: assets/previews
+RENDER_DIR: blender_renders
+ANIMATION_DIR: assets/previews
 ```
+
 These directories will be created in the current directory.
 
 ## Additional CLI arguments
 
 `PCBooth` supports the following command arguments:
 
-* `-c PRESET_NAME` - uses a selected `blendcfg` preset (see: [Custom config settings](blendcfg.md#custom-config-settings))
-* `-d` - enables debug logging
-* `-u` – merges additional settings from the template into the local configuration and exits. Existing user-defined settings remain unchanged. If no `blendcfg.yaml` file exists in the current directory, it is copied from the template instead.
-* `-R` - resets the local configuration to match the template, overwriting any user-defined settings, then exits. If no `blendcfg.yaml` file exists in the current directory, it is copied from the template instead.
-* `-l` - prints source Blender model object and collection hierarchy to console  
-* `-g` - enforce rendering using GPU device, terminate script if no such device is available.
+- `-c PRESET_NAME` - uses a selected `blendcfg` preset (see: [Custom config settings](blendcfg.md#custom-config-settings))
+- `-d` - enables debug logging
+- `-u` – merges additional settings from the template into the local configuration and exits. Existing user-defined settings remain unchanged. If no `blendcfg.yaml` file exists in the current directory, it is copied from the template instead.
+- `-R` - resets the local configuration to match the template, overwriting any user-defined settings, then exits. If no `blendcfg.yaml` file exists in the current directory, it is copied from the template instead.
+- `-l` - prints source Blender model object and collection hierarchy to console
+- `-g` - enforce rendering using GPU device, terminate script if no such device is available.
 
 ## Rendering jobs
 
-`PCBooth` comes with rendering jobs that can be enabled to obtain various static images and animations. 
+`PCBooth` comes with rendering jobs that can be enabled to obtain various static images and animations.
 
 ```{note}
 Custom rendering jobs can be added to `PCBooth`. For more information, see: [Rendering jobs](#jobs.md) chapter.
@@ -56,6 +57,10 @@ This module handles rendering of static images of a model on selected background
 
 Yields renders named <camera_angle><position initial>_<background name>, e.g. rightT_paper_black.png, for each combination.
 
+This rendering job supports the following additional parameters:
+
+    * `FRAMES`: ["start", "end"], [int] or ["from_blend"] - list of keyword strings or integers allowing to define which keyframes to render. `start, end` will render first and last frame derived from keyframes defined in the .blend file. `int` will render frames specified in the list of integers. `from_blend` will render first and last frame defined by animation frame range in Output properties of the .blend file.
+
 ```{figure} img/static.png
 :align: center
 
@@ -63,7 +68,7 @@ Yields renders named <camera_angle><position initial>_<background name>, e.g. ri
 
 ````{tab} FLIPTRANSITION
 
-This module handles rendering of animations showcasing the model (usually PCB) flipped from TOP to BOTTOM position. 
+This module handles rendering of animations showcasing the model (usually PCB) flipped from TOP to BOTTOM position.
 Flips will be rendered for all cameras specified in config file.
 Always overrides background to "transparent" and positions to "TOP" and "BOTTOM".
 
@@ -78,7 +83,7 @@ Yields renders named <camera_angle><position initial>_<camera_angle><position in
 
 Camera transition animation rendering job.
 
-This module handles rendering of animations showcasing the model transitioning from one camera angle to another. 
+This module handles rendering of animations showcasing the model transitioning from one camera angle to another.
 Transitions will be generated for all camera combinations specified in the configuration, but only within the same position (for example left to right bottom side, but never left top to right bottom).
 Always overrides background to "transparent".
 
@@ -94,7 +99,7 @@ Yields renders named <camera_angle><position initial>_<camera_angle><position in
 Component binary mask rendering job.
 
 This module handles fast rendering of static images of each component in a model component using a black and white color pallette.
-These images can act as binary masks, enabling precise identification of the component's location within a full-color render. 
+These images can act as binary masks, enabling precise identification of the component's location within a full-color render.
 Masks are rendered for each camera in each model position specified in config.
 
 Yields renders to the <RENDER_DIR>/masks/<full/covered>/<camera name><position initial>/ directory. Filename is determined based on model type:
@@ -106,7 +111,8 @@ This rendering job supports the following additional parameters:
 
     * `FULL` - boolean switch, enables mask renders as full component silhouette
     * `COVERED` - boolean switch, enables mask renders as components partially obscured by other components
-    * `HIGHLIGHTED` - list of strings to restrict components rendered by specified designators (PCB type model only) 
+    * `HIGHLIGHTED` - list of strings to restrict components rendered by specified designators (PCB type model only)
+    * `FRAMES`: ["start", "end"], [int] or ["from_blend"] - list of keyword strings or integers allowing to define which keyframes to render. `start, end` will render first and last frame derived from keyframes defined in the .blend file. `int` will render frames specified in the list of integers. `from_blend` will render first and last frame defined by animation frame range in Output properties of the .blend file.
 
 ```{figure} img/masks.png
 :align: center
@@ -126,6 +132,13 @@ Yields renders to the <RENDER_DIR>/highlights/ directory. Filename is determined
     * for other types of model, full rendered object name is used with <camera><position initial> suffix
 
 Additional linked objects will be hidden for rendering.
+
+This rendering job supports the following additional parameters:
+
+    * `HIDDEN` - list of strings to hide components from render by specified designators (PCB type model only)
+    * `HIGHLIGHTED` - list of strings to restrict components highlighted by specified designators (PCB type model only)
+    * `FRAMES`: ["start", "end"], [int] or ["from_blend"] - list of keyword strings or integers allowing to define which keyframes to render. `start, end` will render first and last frame derived from keyframes defined in the .blend file. `int` will render frames specified in the list of integers. `from_blend` will render first and last frame defined by animation frame range in Output properties of the .blend file.
+
 
 ```{figure} img/highlights.png
 :align: center
@@ -160,36 +173,41 @@ It supports using various camera angles and selected backgrounds.
 
 Yields renders named <camera_angle><position initial>_<background name>_animation e.g. rightT_paper_black_animation.webm, for each combination.
 
+This rendering job supports the following additional parameters:
+
+    * `FRAMES`: ["start", "end"], [int] or ["from_blend"] - list of keyword strings or integers allowing to define range of frames to render. `start, end` will render sequence from first to last frame derived from keyframes defined in the .blend file. `int` will render range of frames between keyframes specified by two integers. `from_blend` will use animation frame range in Output properties of the .blend file.
+
 ```{video} img/animation.webm
 :align: center
 
 ````
+
 ## Model types
 
-`PCBooth` will recognize model types based on found objects' structures or assign it based on values stored in the `blendcfg.yaml` file. 
+`PCBooth` will recognize model types based on found objects' structures or assign it based on values stored in the `blendcfg.yaml` file.
 This is implemented to properly group objects in the scene to better frame them and allow type-specific features.
 
 If no specific model type is recognized, all objects saved within the .blend file will be framed by cameras.
 
 ### PCB type
 
-This model type is assigned if `gerber2blend`/`picknblend` output PCB model is read. 
+This model type is assigned if `gerber2blend`/`picknblend` output PCB model is read.
 
-* by default entire model gets rotated horizontally before render (longer edge towards viewer) - can be disabled by setting ` SCENE/ADJUST_POSE: False`
-* if components are imported, they are differentiated between top and bottom sides
+- by default entire model gets rotated horizontally before render (longer edge towards viewer) - can be disabled by setting ` SCENE/ADJUST_POSE: False`
+- if components are imported, they are differentiated between top and bottom sides
 
 ### Single object type
 
 This model is assigned if there's exactly one object in a scene.
 
-* by default, the entire model gets rotated using value stored in `DISPLAY_ROT` custom property - this can be disabled by setting ` SCENE/ADJUST_POSE: False`
-* before render, origin point of the model will be temporarily moved to geometric center of the model to make position changes more aesthetically appealing
+- by default, the entire model gets rotated using value stored in `DISPLAY_ROT` custom property - this can be disabled by setting ` SCENE/ADJUST_POSE: False`
+- before render, origin point of the model will be temporarily moved to geometric center of the model to make position changes more aesthetically appealing
 
 ### `blendcfg.yaml` override
 
 A rendered object or group of objects can be manually specified in the `OBJECT` section in the configuration file. This will result in camera framing the object choice, while leaving rest of the scene contents in the background.
 
-To render a selected object present in the .blend file, use the following syntax: 
+To render a selected object present in the .blend file, use the following syntax:
 
 ```yaml
   OBJECT:
@@ -197,9 +215,9 @@ To render a selected object present in the .blend file, use the following syntax
     RENDERED_OBJECT: Object/<object name>
 ```
 
-Alternatively, to render the entire collection as a single rendered object, use the following syntax: 
+Alternatively, to render the entire collection as a single rendered object, use the following syntax:
 
-```yaml 
+```yaml
   OBJECT:
     ...
     RENDERED_OBJECT: Collection/<collection name>

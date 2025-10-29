@@ -6,7 +6,7 @@ from pcbooth.modules.studio import Studio
 from pcbooth.modules.job_utilities import user_animation_override
 from pcbooth.modules.custom_utilities import set_frame_range
 from copy import copy
-from typing import List, Optional, Dict, Any, Set, Literal, List
+from typing import List, Optional, Dict, Any, Set, Literal
 from pydantic import BaseModel
 from contextlib import nullcontext
 
@@ -136,7 +136,7 @@ class UserAnimationJob(Job):
         Overwrite this in deriving classes to add their own parameters.
         """
 
-        FRAMES: List[Literal["start", "end"] | int] = []
+        FRAMES: List[Literal["start", "end"] | Literal["from_blend"] | int] = []
 
     def execute(self, studio: Studio) -> None:
         """
@@ -146,7 +146,8 @@ class UserAnimationJob(Job):
         self._setup(studio)
         with self.context:
             self._parse_frames()
-            set_frame_range(min(self.frames), max(self.frames))
+            if "from_blend" not in self.frames:
+                set_frame_range(min(self.frames), max(self.frames))
             if not self.report():
                 self.iterate()
         studio.clear_animation_data()
@@ -172,12 +173,24 @@ class UserAnimationJob(Job):
         return f"_{frame:04d}"
 
     def _parse_frames(self) -> None:
-        """Parse FRAMES optional parameter into set of integers, changes 'start' and 'end' into corresponding first and last found keyframe."""
+        """Parse FRAMES optional parameter.
 
+        Parses FRAMES into set of integers, changes 'start' and 'end' into corresponding first and last found keyframe.
+        If "from_blend" is passed as FRAMES parameter, use frame range defined in Output Properties in Blender instead.
+        """
+        self.frames: Set[int]
         frames = self.params.get("FRAMES", _DEFAULT_FRAMES)
         self.has_animation_data = True
+
         if not frames:
             self.has_animation_data = False
             frames = ["start"]
-        frame_map = {"start": self.studio.frame_start, "end": self.studio.frame_end}
-        self.frames = {frame_map.get(frame, frame) for frame in frames}
+
+        if "from_blend" in frames:
+            frame_start = self.studio.backup.get("frame_start", 1)
+            frame_end = self.studio.backup.get("frame_end", 250)
+            logger.debug(f"Using backed up frame range: {frame_start}-{frame_end}")
+            self.frames = {frame_start, frame_end}
+        else:
+            frame_map = {"start": self.studio.frame_start, "end": self.studio.frame_end}
+            self.frames = {frame_map.get(frame, frame) for frame in frames}

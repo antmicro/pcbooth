@@ -5,7 +5,7 @@ Adds cameras, lights and backgrounds.
 
 import bpy
 from math import radians
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Any
 import logging
 
 import pcbooth.modules.config as config
@@ -28,6 +28,8 @@ class Studio:
     }
 
     def __init__(self) -> None:
+        self.backup: Dict[str, Any] = {}
+
         self.set_frames()
         init_render_settings()
         set_default_compositing()
@@ -274,7 +276,13 @@ class Studio:
         """
         Set start and end frames based on the values from configuration file or existing keyframes.
         When called, updates context scene start and end values as well.
+        frame_start and frame_end are backed up for potential use in UserAnimationJob rendering jobs.
         """
+        if not self.backup.get("frame_start"):
+            self.backup["frame_start"] = bpy.context.scene.frame_start
+        if not self.backup.get("frame_end"):
+            self.backup["frame_end"] = bpy.context.scene.frame_end
+
         keyframes = self.get_keyframe_range(default)
         self.frame_start = keyframes[0]
         self.frame_end = keyframes[1]
