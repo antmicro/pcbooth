@@ -52,9 +52,24 @@ class Masks(UserAnimationJob):
         renderer = RendererWrapper()
         highlighted = self.get_component_lists()
         len_params = sum(value is True for value in self.params.values())
-        total_renders = (
-            len(highlighted) * len(self.studio.cameras) * len(self.studio.positions) * len_params * len(self.frames)
+
+        len_bottom_highlighted = (
+            len([component for component in highlighted if self.is_skipped(component, "TOP")])
+            if "BOTTOM" in self.studio.positions and self.studio.is_pcb
+            else 0
         )
+        len_top_highlighted = (
+            len([component for component in highlighted if self.is_skipped(component, "BOTTOM")])
+            if "TOP" in self.studio.positions and self.studio.is_pcb
+            else 0
+        )
+        total_renders = (
+            (len_top_highlighted + len_bottom_highlighted + (len(highlighted) if not self.studio.is_pcb else 0))
+            * len(self.studio.cameras)
+            * len_params
+            * len(self.frames)
+        )
+
         self.update_status(total_renders)
         with (
             ju.cycles_override(setup_ultralow_cycles),
@@ -76,11 +91,7 @@ class Masks(UserAnimationJob):
                             bpy.context.scene.frame_set(frame)
 
                             for component in highlighted:
-                                if (
-                                    (component in self.studio.top_components and position != "TOP")
-                                    or (component in self.studio.bottom_components and position != "BOTTOM")
-                                    and self.studio.is_pcb
-                                ):
+                                if self.is_skipped(component, position):
                                     continue
 
                                 if self.params.get("FULL"):
@@ -136,3 +147,11 @@ class Masks(UserAnimationJob):
         if highlighted := self.params.get("HIGHLIGHTED"):
             return any(designator.startswith(des) for des in highlighted)
         return False
+
+    def is_skipped(self, component: bpy.types.Object, position: str) -> bool:
+        """Check if component belongs to either TOP or BOTTOM side, return a boolean."""
+        return (
+            (component in self.studio.top_components and position != "TOP")
+            or (component in self.studio.bottom_components and position != "BOTTOM")
+            and self.studio.is_pcb
+        )
