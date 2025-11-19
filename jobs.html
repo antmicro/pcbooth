@@ -1,0 +1,975 @@
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      <link rel="icon" href="">
+    
+    
+      
+        <title>Rendering jobs - PCBooth Documentation</title>
+      
+    
+    
+      
+        
+        
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+        <link rel="stylesheet" type="text/css" href="_static/sphinx_immaterial_theme.c5589c0bd87d933a4.min.css?v=eeeb54bc" />
+        <link rel="stylesheet" type="text/css" href="_static/tabs.css?v=4c969af8" />
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="deep-orange">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="index.html" title="PCBooth Documentation" class="md-header__button md-logo" aria-label="PCBooth Documentation" data-md-component="logo">
+      <img src="_static/white.svg" alt="logo">
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            PCBooth Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Rendering jobs
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      <form class="md-header__option" data-md-component="palette">
+        
+          
+          
+          <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+          
+            <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_2" hidden>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5c-.84 0-1.65.15-2.39.42L12 2M3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29L3.34 7m.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14L3.36 17M20.65 7l-1.77 3.79a7.023 7.023 0 0 0-2.38-4.15l4.15.36m-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29L20.64 17M12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44L12 22Z"/></svg>
+            </label>
+          
+        
+          
+          
+          <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="deep-orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_2">
+          
+            <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3 3.19.09m3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95 2.06.05m-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31Z"/></svg>
+            </label>
+          
+        
+      </form>
+    
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="index.html" title="PCBooth Documentation" class="md-nav__button md-logo" aria-label="PCBooth Documentation" data-md-component="logo">
+      <img src="_static/white.svg" alt="logo">
+    </a>
+    PCBooth Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="introduction.html" class="md-nav__link">
+        <span class="md-ellipsis">Introduction</span>
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="install.html" class="md-nav__link">
+        <span class="md-ellipsis">Installation</span>
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="quickstart.html" class="md-nav__link">
+        <span class="md-ellipsis">Quick start</span>
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="usage.html" class="md-nav__link">
+        <span class="md-ellipsis">Usage</span>
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="blendcfg.html" class="md-nav__link">
+        <span class="md-ellipsis">Configuring blendcfg.<wbr>yaml</span>
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          <span class="md-ellipsis">Rendering jobs</span>
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="#" class="md-nav__link md-nav__link--active">
+        <span class="md-ellipsis">Rendering jobs</span>
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#writing-rendering-jobs" class="md-nav__link">
+    <span class="md-ellipsis">Writing rendering jobs</span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Writing rendering jobs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tracking-progress" class="md-nav__link">
+    <span class="md-ellipsis">Tracking progress</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#overriding-config" class="md-nav__link">
+    <span class="md-ellipsis">Overriding config</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#passing-job-specific-parameters-in-the-config" class="md-nav__link">
+    <span class="md-ellipsis">Passing job-<wbr>specific parameters in the config</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-the-rendererwrapper-and-ffmpegwrapper" class="md-nav__link">
+    <span class="md-ellipsis">Using the Renderer<wbr>Wrapper and FFmpeg<wbr>Wrapper</span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Using the RendererWrapper and FFmpegWrapper">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rendererwrapper-class" class="md-nav__link">
+    <span class="md-ellipsis">Renderer<wbr>Wrapper class</span>
+  </a>
+  
+    <nav class="md-nav" aria-label="RendererWrapper class">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#renderer.RendererWrapper" class="md-nav__link">
+    <span aria-label="Python class" class="objinfo-icon objinfo-icon__data" title="Python class">C</span><span title="renderer.RendererWrapper (Python class) — Class responsible for rendering images and frames within Blender." class="md-ellipsis">renderer.<wbr>Renderer<wbr>Wrapper</span>
+  </a>
+  
+    <nav class="md-nav" aria-label="renderer.RendererWrapper">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#renderer.RendererWrapper.clear_cache" class="md-nav__link">
+    <span aria-label="Python method" class="objinfo-icon objinfo-icon__procedure" title="Python method">M</span><span title="renderer.RendererWrapper.clear_cache (Python method) — Remove render cache file. Looks for CACHE_NAME files. Sets cache attribute to None." class="md-ellipsis">clear_<wbr>cache</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#renderer.RendererWrapper.render" class="md-nav__link">
+    <span aria-label="Python method" class="objinfo-icon objinfo-icon__procedure" title="Python method">M</span><span title="renderer.RendererWrapper.render (Python method) — Render an image using specified camera and save under provided file name. Optional format_override can be used to ignore format list from config file. Uses cached render from _init_render method." class="md-ellipsis">render</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#renderer.RendererWrapper.render_animation" class="md-nav__link">
+    <span aria-label="Python method" class="objinfo-icon objinfo-icon__procedure" title="Python method">M</span><span title="renderer.RendererWrapper.render_animation (Python method) — Render sequence of images iterating over frame count range from bpy.context.scene. Clears cache after each frame as they are not supposed to be rendered as mutliple format." class="md-ellipsis">render_<wbr>animation</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#renderer.RendererWrapper.thumbnail" class="md-nav__link">
+    <span aria-label="Python method" class="objinfo-icon objinfo-icon__procedure" title="Python method">M</span><span title="renderer.RendererWrapper.thumbnail (Python method) — Make thumbnail copy of a rendered image. Uses previously saved render image data. Uses cached render from _init_render method." class="md-ellipsis">thumbnail</span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ffmpegwrapper-class" class="md-nav__link">
+    <span class="md-ellipsis">FFmpeg<wbr>Wrapper class</span>
+  </a>
+  
+    <nav class="md-nav" aria-label="FFmpegWrapper class">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#renderer.FFmpegWrapper" class="md-nav__link">
+    <span aria-label="Python class" class="objinfo-icon objinfo-icon__data" title="Python class">C</span><span title="renderer.FFmpegWrapper (Python class) — Class responsible for running FFMPEG commands to sequence series of images to common video formats." class="md-ellipsis">renderer.<wbr>FFmpeg<wbr>Wrapper</span>
+  </a>
+  
+    <nav class="md-nav" aria-label="renderer.FFmpegWrapper">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#renderer.FFmpegWrapper.clear_frames" class="md-nav__link">
+    <span aria-label="Python method" class="objinfo-icon objinfo-icon__procedure" title="Python method">M</span><span title="renderer.FFmpegWrapper.clear_frames (Python method) — Remove frame files after sequencing. Recognizes &lt;filename&gt;_&lt;frame_number&gt;.&lt;ext&gt; filenames using regex. Expects 4-digit frame number." class="md-ellipsis">clear_<wbr>frames</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#renderer.FFmpegWrapper.reverse" class="md-nav__link">
+    <span aria-label="Python method" class="objinfo-icon objinfo-icon__procedure" title="Python method">M</span><span title="renderer.FFmpegWrapper.reverse (Python method) — Reverse existing video file." class="md-ellipsis">reverse</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#renderer.FFmpegWrapper.run" class="md-nav__link">
+    <span aria-label="Python method" class="objinfo-icon objinfo-icon__procedure" title="Python method">M</span><span title="renderer.FFmpegWrapper.run (Python method) — Run FFPMEG and sequence images into full-scale animation." class="md-ellipsis">run</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#renderer.FFmpegWrapper.thumbnail" class="md-nav__link">
+    <span aria-label="Python method" class="objinfo-icon objinfo-icon__procedure" title="Python method">M</span><span title="renderer.FFmpegWrapper.thumbnail (Python method) — Scale existing video file down into thumbnail." class="md-ellipsis">thumbnail</span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#override-context-managers" class="md-nav__link">
+    <span class="md-ellipsis">Override context managers</span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Override context managers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#module-job_utilities" class="md-nav__link">
+    <span title="job_utilities (Python module)" class="md-ellipsis">job_<wbr>utilities module</span>
+  </a>
+  
+    <nav class="md-nav" aria-label="job_utilities module">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#job_utilities.compositing_override" class="md-nav__link">
+    <span aria-label="Python function" class="objinfo-icon objinfo-icon__procedure" title="Python function">F</span><span title="job_utilities.compositing_override (Python function) — Apply compositor override." class="md-ellipsis">job_<wbr>utilities.<wbr>compositing_<wbr>override</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#job_utilities.cycles_override" class="md-nav__link">
+    <span aria-label="Python function" class="objinfo-icon objinfo-icon__procedure" title="Python function">F</span><span title="job_utilities.cycles_override (Python function) — Apply Cycles settings override." class="md-ellipsis">job_<wbr>utilities.<wbr>cycles_<wbr>override</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#job_utilities.global_material_override" class="md-nav__link">
+    <span aria-label="Python function" class="objinfo-icon objinfo-icon__procedure" title="Python function">F</span><span title="job_utilities.global_material_override (Python function) — Apply global material override for all objects in a scene." class="md-ellipsis">job_<wbr>utilities.<wbr>global_<wbr>material_<wbr>override</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#job_utilities.hide_override" class="md-nav__link">
+    <span aria-label="Python function" class="objinfo-icon objinfo-icon__procedure" title="Python function">F</span><span title="job_utilities.hide_override (Python function) — Apply hide from render override for components from provided list." class="md-ellipsis">job_<wbr>utilities.<wbr>hide_<wbr>override</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#job_utilities.holdout_override" class="md-nav__link">
+    <span aria-label="Python function" class="objinfo-icon objinfo-icon__procedure" title="Python function">F</span><span title="job_utilities.holdout_override (Python function) — Apply holdout override for components from provided list. If non_obstructed" class="md-ellipsis">job_<wbr>utilities.<wbr>holdout_<wbr>override</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#job_utilities.material_override" class="md-nav__link">
+    <span aria-label="Python function" class="objinfo-icon objinfo-icon__procedure" title="Python function">F</span><span title="job_utilities.material_override (Python function) — Override all materials with the specified one for all components in the list. Skips linked objects. Generates backup dictionary with the material slots for revert." class="md-ellipsis">job_<wbr>utilities.<wbr>material_<wbr>override</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#job_utilities.position_override" class="md-nav__link">
+    <span aria-label="Python function" class="objinfo-icon objinfo-icon__procedure" title="Python function">F</span><span title="job_utilities.position_override (Python function) — Temporarily change location or rotation of components from provided list by updating their delta location and Euler rotation. Uses function passed as argument. Restore original location and rotation in the end. By passing rendered object to the context manager, light will be adjusted to the updated model position as well." class="md-ellipsis">job_<wbr>utilities.<wbr>position_<wbr>override</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#job_utilities.shadow_override" class="md-nav__link">
+    <span aria-label="Python function" class="objinfo-icon objinfo-icon__procedure" title="Python function">F</span><span title="job_utilities.shadow_override (Python function) — Override object visibility to shadow rays." class="md-ellipsis">job_<wbr>utilities.<wbr>shadow_<wbr>override</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#job_utilities.user_animation_override" class="md-nav__link">
+    <span aria-label="Python function" class="objinfo-icon objinfo-icon__procedure" title="Python function">F</span><span title="job_utilities.user_animation_override (Python function) — Temporarily override PCBooth animations with user-defined keyframes from the rendered .blend file. Removes any changes made within this context upon exit." class="md-ellipsis">job_<wbr>utilities.<wbr>user_<wbr>animation_<wbr>override</span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset" role="main">
+                  
+
+
+<h1 id="rendering-jobs">Rendering jobs<a class="headerlink" href="#rendering-jobs" title="Link to this heading">¶</a></h1>
+<p>To obtain renders of any type, <code class="docutils literal notranslate"><span class="pre">PCBooth</span></code> executes rendering jobs.
+These jobs are defined in the <code class="docutils literal notranslate"><span class="pre">blendcfg.yaml</span></code> configuration file.
+The following rendering jobs are queued by default:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span class="w">  </span><span class="nt">STAGES</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">STATIC</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">FLIPTRANSITIONS</span><span class="p">:</span>
+</code></pre></div>
+</div>
+<p>Each stage in the pipeline is provided from the <code class="docutils literal notranslate"><span class="pre">jobs</span></code> package in the Blender Python environment.
+For example, <code class="docutils literal notranslate"><span class="pre">STATIC</span></code> is defined in the <a class="reference internal" href="#../../src/jobs/static.py"><span class="xref myst">jobs/static.py</span></a> file:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Static</span><span class="p">(</span><span class="n">UserAnimationJob</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Static image rendering job.</span>
+
+<span class="sd">    This module handles rendering static images of a model (usually PCBs)</span>
+<span class="sd">    using various camera angles and on selected backgrounds.</span>
+<span class="sd">    Rendering selected frames from user-predefined animation data is supported.</span>
+
+<span class="sd">    Yields renders named &lt;camera_angle&gt;&lt;position initial&gt;_&lt;background name&gt;</span>
+<span class="sd">    e.g. rightT_paper_black.png, for each combination.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">iterate</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Main loop of the module to be run within execute() method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">renderer</span> <span class="o">=</span> <span class="n">RendererWrapper</span><span class="p">()</span>
+        <span class="n">total_renders</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">studio</span><span class="o">.</span><span class="n">positions</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">studio</span><span class="o">.</span><span class="n">cameras</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">studio</span><span class="o">.</span><span class="n">backgrounds</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">frames</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_status</span><span class="p">(</span><span class="n">total_renders</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">position</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">studio</span><span class="o">.</span><span class="n">positions</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">studio</span><span class="o">.</span><span class="n">change_position</span><span class="p">(</span><span class="n">position</span><span class="p">)</span>
+            <span class="n">Background</span><span class="o">.</span><span class="n">update_position</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">studio</span><span class="o">.</span><span class="n">top_parent</span><span class="p">)</span>
+            <span class="n">Light</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">studio</span><span class="o">.</span><span class="n">top_parent</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">background</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">studio</span><span class="o">.</span><span class="n">backgrounds</span><span class="p">:</span>
+                <span class="n">Background</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="n">background</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">camera</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">studio</span><span class="o">.</span><span class="n">cameras</span><span class="p">:</span>
+                    <span class="n">camera</span><span class="o">.</span><span class="n">change_position</span><span class="p">(</span><span class="n">position</span><span class="p">)</span>
+
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_animation_data</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">studio</span><span class="o">.</span><span class="n">add_studio_keyframes</span><span class="p">(</span><span class="n">camera</span><span class="p">)</span>
+
+                    <span class="k">for</span> <span class="n">frame</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">frames</span><span class="p">:</span>
+                        <span class="n">bpy</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">frame_set</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+                        <span class="n">filename</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">camera</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}{</span><span class="n">position</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">background</span><span class="o">.</span><span class="n">name</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">get_frame_suffix</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+
+                        <span class="n">renderer</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">camera</span><span class="o">.</span><span class="n">object</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+                        <span class="n">renderer</span><span class="o">.</span><span class="n">thumbnail</span><span class="p">(</span><span class="n">camera</span><span class="o">.</span><span class="n">object</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+                        <span class="n">renderer</span><span class="o">.</span><span class="n">clear_cache</span><span class="p">()</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">update_status</span><span class="p">()</span>
+</code></pre></div>
+</div>
+<p>A rendering job can iterate over elements of the scene (backgrounds, cameras, rendered model) through the Studio class object that gets passed to Job class instances on initialization or alter model objects.
+A single Python file can contain multiple stage definitions.
+A stage <strong>must</strong> inherit from the <code class="docutils literal notranslate"><span class="pre">core.job.Job</span></code> base class to be discoverable by <code class="docutils literal notranslate"><span class="pre">PCBooth</span></code>.
+To call a stage from <code class="docutils literal notranslate"><span class="pre">blendcfg.yaml</span></code>, refer to the stage’s class name in <strong>uppercase</strong> (<code class="docutils literal notranslate"><span class="pre">STATIC</span></code>, in this case) for <code class="docutils literal notranslate"><span class="pre">PCBooth</span></code> to dynamically load and run the code defined in the <code class="docutils literal notranslate"><span class="pre">iterate</span></code> method for the class.
+The <code class="docutils literal notranslate"><span class="pre">execute</span></code> method for a stage is called when all previous stages are completed successfully.</p>
+<h2 id="writing-rendering-jobs">Writing rendering jobs<a class="headerlink" href="#writing-rendering-jobs" title="Link to this heading">¶</a></h2>
+<h3 id="tracking-progress">Tracking progress<a class="headerlink" href="#tracking-progress" title="Link to this heading">¶</a></h3>
+<p>To properly display progress of the rendering job, the <code class="docutils literal notranslate"><span class="pre">update_status</span></code> method can be used.
+When calling it with integer as an argument, you can set the count of all renders within this job.
+You can update this total count value as many time as needed.
+Here’s an example of setting total number of renders based on cameras to use:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">iterate</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">total_renders</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">studio</span><span class="o">.</span><span class="n">cameras</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">update_status</span><span class="p">(</span><span class="n">total_renders</span><span class="p">)</span>
+    <span class="o">...</span>
+</code></pre></div>
+</div>
+<p>When called without an argument, it will increment the progress count iterator and print a status update in the console:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><code>    <span class="k">for</span> <span class="n">camera</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">studio</span><span class="o">.</span><span class="n">cameras</span><span class="p">:</span>
+      <span class="n">renderer</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">camera</span><span class="o">.</span><span class="n">object</span><span class="p">,</span> <span class="n">file_name</span><span class="o">=</span><span class="s2">&quot;render&quot;</span><span class="p">)</span>
+      <span class="n">renderer</span><span class="o">.</span><span class="n">clear_cache</span><span class="p">()</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">update_status</span><span class="p">()</span>
+</code></pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><code><span class="p">[</span><span class="mi">15</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">30</span><span class="p">]</span> <span class="p">[</span><span class="n">pcbooth</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">renderer</span><span class="p">]</span> <span class="p">(</span><span class="n">INFO</span><span class="p">)</span> <span class="n">Rendering</span> <span class="n">photo1T_paper_black</span><span class="o">...</span>
+<span class="p">[</span><span class="mi">15</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">40</span><span class="p">]</span> <span class="p">[</span><span class="n">pcbooth</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">renderer</span><span class="p">]</span> <span class="p">(</span><span class="n">INFO</span><span class="p">)</span> <span class="n">Saved</span> <span class="n">render</span> <span class="k">as</span><span class="p">:</span> <span class="o">//</span><span class="n">blender_renders</span><span class="o">/</span><span class="n">photo1T_paper_black</span><span class="o">.</span><span class="n">png</span>
+<span class="p">[</span><span class="mi">15</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">40</span><span class="p">]</span> <span class="p">[</span><span class="n">pcbooth</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">renderer</span><span class="p">]</span> <span class="p">(</span><span class="n">INFO</span><span class="p">)</span> <span class="n">Saved</span> <span class="n">render</span> <span class="k">as</span><span class="p">:</span> <span class="o">//</span><span class="n">blender_renders</span><span class="o">/</span><span class="n">photo1T_paper_black</span><span class="o">.</span><span class="n">jpg</span>
+<span class="p">[</span><span class="mi">15</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">41</span><span class="p">]</span> <span class="p">[</span><span class="n">pcbooth</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">job</span><span class="p">]</span> <span class="p">(</span><span class="n">INFO</span><span class="p">)</span> <span class="c1">### Progress: 1/6 (16%)</span>
+</code></pre></div>
+</div>
+<h3 id="overriding-config">Overriding config<a class="headerlink" href="#overriding-config" title="Link to this heading">¶</a></h3>
+<p>For some rendering jobs, you might want to force rendering with specific cameras or on specific backgrounds.
+You can do it by overriding <code class="docutils literal notranslate"><span class="pre">_override_studio</span></code> method within your job class and defining studio’s lists there:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pcbooth.modules.background</span> <span class="kn">import</span> <span class="n">Background</span>
+<span class="kn">from</span> <span class="nn">pcbooth.modules.camera</span> <span class="kn">import</span> <span class="n">Camera</span>
+
+<span class="k">class</span> <span class="nc">MyRenderingJob</span><span class="p">(</span><span class="n">pcbooth</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="p">):</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot; Custom example rendering job &quot;&quot;&quot;</span>
+
+  <span class="k">def</span> <span class="nf">_override_studio</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">studio</span><span class="o">.</span><span class="n">backgrounds</span> <span class="o">=</span> <span class="p">[</span><span class="n">Background</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;transparent&quot;</span><span class="p">)]</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">studio</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;TOP&quot;</span><span class="p">,</span> <span class="s2">&quot;BOTTOM&quot;</span><span class="p">]</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">studio</span><span class="o">.</span><span class="n">cameras</span> <span class="o">=</span> <span class="p">[</span><span class="n">Camera</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;PHOTO1&quot;</span><span class="p">),</span> <span class="n">Camera</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;FRONT&quot;</span><span class="p">)]</span>
+</code></pre></div>
+</div>
+<p>This method will now override values read from config for your specific job only.
+Other jobs will run with the lists parsed from blendcfg.yaml unless they have their own overrides added.</p>
+<h3 id="passing-job-specific-parameters-in-the-config">Passing job-specific parameters in the config<a class="headerlink" href="#passing-job-specific-parameters-in-the-config" title="Link to this heading">¶</a></h3>
+<p>You can run rendering jobs with additional parameters defined in the config file.
+To enable them, override the <code class="docutils literal notranslate"><span class="pre">ParameterSchema(BaseModel)</span></code> class in your rendering job and define your parameter types and default values as follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><code>  <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+  
+  <span class="o">...</span>
+  
+  <span class="k">class</span> <span class="nc">ParameterSchema</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">      </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">      Pydantic schema class for optional job parameters.</span>
+<span class="sd">      Overwrite this in deriving classes to add their own parameters.</span>
+<span class="sd">      &quot;&quot;&quot;</span>
+
+      <span class="n">PARAMETER1</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+      <span class="n">PARAMETER2</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+      <span class="n">PARAMETER3</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;FOO&quot;</span><span class="p">,</span> <span class="s2">&quot;BAR&quot;</span><span class="p">]</span>
+</code></pre></div>
+</div>
+<p>Parameters are parsed and converted with use of this schema, so that only the valid ones get passed to the rendering job. Enabled parameters will be printed to console in the rendering job report:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><code><span class="p">[</span><span class="mi">14</span><span class="p">:</span><span class="mi">24</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span> <span class="p">[</span><span class="n">pcbooth</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">job</span><span class="p">]</span> <span class="p">(</span><span class="n">INFO</span><span class="p">)</span> <span class="c1">### MASKS rendering job</span>
+<span class="p">[</span><span class="mi">14</span><span class="p">:</span><span class="mi">24</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span> <span class="p">[</span><span class="n">pcbooth</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">job</span><span class="p">]</span> <span class="p">(</span><span class="n">INFO</span><span class="p">)</span> 	<span class="o">*</span> <span class="n">enabled</span> <span class="n">rendered</span> <span class="nb">object</span> <span class="n">positions</span><span class="p">:</span> <span class="n">TOP</span><span class="p">,</span> <span class="n">BOTTOM</span>
+<span class="p">[</span><span class="mi">14</span><span class="p">:</span><span class="mi">24</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span> <span class="p">[</span><span class="n">pcbooth</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">job</span><span class="p">]</span> <span class="p">(</span><span class="n">INFO</span><span class="p">)</span> 	<span class="o">*</span> <span class="n">enabled</span> <span class="n">cameras</span><span class="p">:</span> <span class="n">FRONT</span><span class="p">,</span> <span class="n">PHOTO1</span>
+<span class="p">[</span><span class="mi">14</span><span class="p">:</span><span class="mi">24</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span> <span class="p">[</span><span class="n">pcbooth</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">job</span><span class="p">]</span> <span class="p">(</span><span class="n">INFO</span><span class="p">)</span> 	<span class="o">*</span> <span class="n">enabled</span> <span class="n">backgrounds</span><span class="p">:</span> <span class="n">paper_black</span>
+<span class="p">[</span><span class="mi">14</span><span class="p">:</span><span class="mi">24</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span> <span class="p">[</span><span class="n">pcbooth</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">job</span><span class="p">]</span> <span class="p">(</span><span class="n">INFO</span><span class="p">)</span> 	<span class="o">*</span> <span class="n">enabled</span> <span class="n">parameters</span><span class="p">:</span> <span class="n">FULL</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">COVERED</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">HIGHLIGHTED</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;J&#39;</span><span class="p">,</span> <span class="s1">&#39;PS&#39;</span><span class="p">,</span> <span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="s1">&#39;U&#39;</span><span class="p">,</span> <span class="s1">&#39;IC&#39;</span><span class="p">,</span> <span class="s1">&#39;POT&#39;</span><span class="p">]</span>
+<span class="p">[</span><span class="mi">14</span><span class="p">:</span><span class="mi">24</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span> <span class="p">[</span><span class="n">pcbooth</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">job</span><span class="p">]</span> <span class="p">(</span><span class="n">INFO</span><span class="p">)</span> <span class="n">Total</span> <span class="n">renders</span><span class="p">:</span> <span class="mi">62</span>
+</code></pre></div>
+</div>
+<p>In the rendering job module code, you can you can access parameters using <code class="docutils literal notranslate"><span class="pre">self.params.get(&lt;parameter</span> <span class="pre">name&gt;)</span></code>.</p>
+<h3 id="using-the-rendererwrapper-and-ffmpegwrapper">Using the <code class="docutils literal notranslate"><span class="pre">RendererWrapper</span></code> and <code class="docutils literal notranslate"><span class="pre">FFmpegWrapper</span></code><a class="headerlink" href="#using-the-rendererwrapper-and-ffmpegwrapper" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">RendererWrapper</span></code> and <code class="docutils literal notranslate"><span class="pre">FFmpegWrapper</span></code> are classes handling saving render results and sequencing them into animations.
+<code class="docutils literal notranslate"><span class="pre">PCBooth</span></code> relies on image data buffers stored within them to optimize saving each output in different file formats.</p>
+<p>In order to use them, import them from the <code class="docutils literal notranslate"><span class="pre">renderer</span></code> module and create their instances within the <code class="docutils literal notranslate"><span class="pre">iterate</span></code> method:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pcbooth.modules.renderer</span> <span class="kn">import</span> <span class="n">FFmpegWrapper</span><span class="p">,</span> <span class="n">RendererWrapper</span>
+
+<span class="k">def</span> <span class="nf">iterate</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  Main loop of the module to be run within execute() method.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  <span class="n">ffmpeg</span> <span class="o">=</span> <span class="n">FFmpegWrapper</span><span class="p">()</span>
+  <span class="n">renderer</span> <span class="o">=</span> <span class="n">RendererWrapper</span><span class="p">()</span>
+  <span class="o">...</span>
+</code></pre></div>
+</div>
+<h4 id="rendererwrapper-class"><code class="docutils literal notranslate"><span class="pre">RendererWrapper</span></code> class<a class="headerlink" href="#rendererwrapper-class" title="Link to this heading">¶</a></h4>
+<dl class="py class objdesc">
+<dt class="sig sig-object highlight py" id="renderer.RendererWrapper">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renderer.</span></span><span class="sig-name descname"><span class="pre">RendererWrapper</span></span><a class="headerlink" href="#renderer.RendererWrapper" title="Link to this definition">¶</a></dt>
+<dd><p>Class responsible for rendering images and frames within Blender.</p>
+<dl class="py method objdesc">
+<dt class="sig sig-object highlight py" id="renderer.RendererWrapper.clear_cache">
+<span class="sig-name descname"><span class="pre">clear_cache</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="desctype"><span class="pre">None</span></span></span></span><a class="headerlink" href="#renderer.RendererWrapper.clear_cache" title="Link to this definition">¶</a></dt>
+<dd><p>Remove render cache file. Looks for CACHE_NAME files. Sets cache attribute to None.</p>
+</dd></dl>
+
+<dl class="py method objdesc">
+<dt class="sig sig-object highlight sig-wrap py" id="renderer.RendererWrapper.render">
+<span class="sig-name descname"><span class="pre">render</span></span><span class="sig-paren">(</span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#renderer.RendererWrapper.render" title="renderer.RendererWrapper.render.camera (Python parameter)"><span class="n"><span class="pre">camera</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">bpy.types.Object</span></span></span></em>, </span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#renderer.RendererWrapper.render" title="renderer.RendererWrapper.render.file_name (Python parameter)"><span class="n"><span class="pre">file_name</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">str</span></span></span></em>, </span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#renderer.RendererWrapper.render" title="renderer.RendererWrapper.render.format_override (Python parameter)"><span class="n"><span class="pre">format_override</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><code class="code python default_value docutils literal highlight highlight-python"><span class="kc">None</span></code></em></span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="desctype"><span class="pre">None</span></span></span></span><a class="headerlink" href="#renderer.RendererWrapper.render" title="Link to this definition">¶</a></dt>
+<dd><p>Render an image using specified camera and save under provided file name.
+Optional format_override can be used to ignore format list from config file.
+Uses cached render from _init_render method.</p>
+</dd></dl>
+
+<dl class="py method objdesc">
+<dt class="sig sig-object highlight py" id="renderer.RendererWrapper.render_animation">
+<span class="sig-name descname"><span class="pre">render_animation</span></span><span class="sig-paren">(</span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#renderer.RendererWrapper.render_animation" title="renderer.RendererWrapper.render_animation.camera (Python parameter)"><span class="n"><span class="pre">camera</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">bpy.types.Object</span></span></span></em>, </span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#renderer.RendererWrapper.render_animation" title="renderer.RendererWrapper.render_animation.file_name (Python parameter)"><span class="n"><span class="pre">file_name</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">str</span></span></span></em></span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="desctype"><span class="pre">None</span></span></span></span><a class="headerlink" href="#renderer.RendererWrapper.render_animation" title="Link to this definition">¶</a></dt>
+<dd><p>Render sequence of images iterating over frame count range from bpy.context.scene.
+Clears cache after each frame as they are not supposed to be rendered as mutliple format.</p>
+</dd></dl>
+
+<dl class="py method objdesc">
+<dt class="sig sig-object highlight sig-wrap py" id="renderer.RendererWrapper.thumbnail">
+<span class="sig-name descname"><span class="pre">thumbnail</span></span><span class="sig-paren">(</span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#renderer.RendererWrapper.thumbnail" title="renderer.RendererWrapper.thumbnail.camera (Python parameter)"><span class="n"><span class="pre">camera</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">bpy.types.Object</span></span></span></em>, </span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#renderer.RendererWrapper.thumbnail" title="renderer.RendererWrapper.thumbnail.file_name (Python parameter)"><span class="n"><span class="pre">file_name</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">str</span></span></span></em>, </span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#renderer.RendererWrapper.thumbnail" title="renderer.RendererWrapper.thumbnail.format_override (Python parameter)"><span class="n"><span class="pre">format_override</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><code class="code python default_value docutils literal highlight highlight-python"><span class="kc">None</span></code></em></span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="desctype"><span class="pre">None</span></span></span></span><a class="headerlink" href="#renderer.RendererWrapper.thumbnail" title="Link to this definition">¶</a></dt>
+<dd><p>Make thumbnail copy of a rendered image. Uses previously saved render image data.
+Uses cached render from _init_render method.</p>
+</dd></dl>
+
+</dd></dl>
+
+<h4 id="ffmpegwrapper-class"><code class="docutils literal notranslate"><span class="pre">FFmpegWrapper</span></code> class<a class="headerlink" href="#ffmpegwrapper-class" title="Link to this heading">¶</a></h4>
+<dl class="py class objdesc">
+<dt class="sig sig-object highlight py" id="renderer.FFmpegWrapper">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">renderer.</span></span><span class="sig-name descname"><span class="pre">FFmpegWrapper</span></span><a class="headerlink" href="#renderer.FFmpegWrapper" title="Link to this definition">¶</a></dt>
+<dd><p>Class responsible for running FFMPEG commands to sequence series of images to common video formats.</p>
+<dl class="py method objdesc">
+<dt class="sig sig-object highlight py" id="renderer.FFmpegWrapper.clear_frames">
+<span class="sig-name descname"><span class="pre">clear_frames</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="desctype"><span class="pre">None</span></span></span></span><a class="headerlink" href="#renderer.FFmpegWrapper.clear_frames" title="Link to this definition">¶</a></dt>
+<dd><p>Remove frame files after sequencing.
+Recognizes &lt;filename&gt;_&lt;frame_number&gt;.&lt;ext&gt; filenames using regex.
+Expects 4-digit frame number.</p>
+</dd></dl>
+
+<dl class="py method objdesc">
+<dt class="sig sig-object highlight py" id="renderer.FFmpegWrapper.reverse">
+<span class="sig-name descname"><span class="pre">reverse</span></span><span class="sig-paren">(</span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#renderer.FFmpegWrapper.reverse" title="renderer.FFmpegWrapper.reverse.input_file (Python parameter)"><span class="n"><span class="pre">input_file</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">str</span></span></span></em>, </span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#renderer.FFmpegWrapper.reverse" title="renderer.FFmpegWrapper.reverse.output_file (Python parameter)"><span class="n"><span class="pre">output_file</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">str</span></span></span></em></span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="desctype"><span class="pre">None</span></span></span></span><a class="headerlink" href="#renderer.FFmpegWrapper.reverse" title="Link to this definition">¶</a></dt>
+<dd><p>Reverse existing video file.</p>
+</dd></dl>
+
+<dl class="py method objdesc">
+<dt class="sig sig-object highlight py" id="renderer.FFmpegWrapper.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#renderer.FFmpegWrapper.run" title="renderer.FFmpegWrapper.run.input_file (Python parameter)"><span class="n"><span class="pre">input_file</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">str</span></span></span></em>, </span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#renderer.FFmpegWrapper.run" title="renderer.FFmpegWrapper.run.output_file (Python parameter)"><span class="n"><span class="pre">output_file</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">str</span></span></span></em></span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="desctype"><span class="pre">None</span></span></span></span><a class="headerlink" href="#renderer.FFmpegWrapper.run" title="Link to this definition">¶</a></dt>
+<dd><p>Run FFPMEG and sequence images into full-scale animation.</p>
+</dd></dl>
+
+<dl class="py method objdesc">
+<dt class="sig sig-object highlight py" id="renderer.FFmpegWrapper.thumbnail">
+<span class="sig-name descname"><span class="pre">thumbnail</span></span><span class="sig-paren">(</span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#renderer.FFmpegWrapper.thumbnail" title="renderer.FFmpegWrapper.thumbnail.input_file (Python parameter)"><span class="n"><span class="pre">input_file</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">str</span></span></span></em>, </span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#renderer.FFmpegWrapper.thumbnail" title="renderer.FFmpegWrapper.thumbnail.output_file (Python parameter)"><span class="n"><span class="pre">output_file</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><code class="code python default_value docutils literal highlight highlight-python"><span class="kc">None</span></code></em></span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="desctype"><span class="pre">None</span></span></span></span><a class="headerlink" href="#renderer.FFmpegWrapper.thumbnail" title="Link to this definition">¶</a></dt>
+<dd><p>Scale existing video file down into thumbnail.</p>
+</dd></dl>
+
+</dd></dl>
+
+<h3 id="override-context-managers">Override context managers<a class="headerlink" href="#override-context-managers" title="Link to this heading">¶</a></h3>
+<p>Some rendering jobs might require rendering settings, model position or other properties to be temporarily altered from their default state.
+To not interfere with subsequent rendering jobs in the queue, those alterations need to be reversed at the end of the job.
+To help with this, context managers from the <code class="docutils literal notranslate"><span class="pre">job_utilities</span></code> module can be used, for example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pcbooth.modules.renderer</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">RendererWrapper</span><span class="p">,</span>
+    <span class="n">setup_ultralow_cycles</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">import</span> <span class="nn">pcbooth.modules.job_utilities</span> <span class="k">as</span> <span class="nn">ju</span>
+
+<span class="k">class</span> <span class="nc">MyRenderingJob</span><span class="p">(</span><span class="n">pcbooth</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">Job</span><span class="p">):</span>
+<span class="w">  </span><span class="sd">&quot;&quot;&quot; Custom example rendering job &quot;&quot;&quot;</span>
+
+  <span class="k">def</span> <span class="nf">iterate</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="o">...</span>
+    <span class="k">with</span> <span class="p">(</span><span class="n">ju</span><span class="o">.</span><span class="n">cycles_override</span><span class="p">(</span><span class="n">setup_ultralow_cycles</span><span class="p">),</span> <span class="n">ju</span><span class="o">.</span><span class="n">global_material_override</span><span class="p">()):</span>
+      <span class="k">for</span> <span class="n">camera</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">studio</span><span class="o">.</span><span class="n">cameras</span><span class="p">:</span>
+        <span class="o">...</span>
+</code></pre></div>
+</div>
+<p>This rendering job will render images using ultralow quality Cycles settings preset and apply global material override for all objects in a scene, then it will restore the settings to the previous state when it’s finished.</p>
+<h4 id="module-job_utilities"><span id="job-utilities-module"></span><code class="docutils literal notranslate"><span class="pre">job_utilities</span></code> module<a class="headerlink" href="#module-job_utilities" title="Link to this heading">¶</a></h4>
+<p>Module containing utility functions for rendering jobs.</p>
+<dl class="py function objdesc">
+<dt class="sig sig-object highlight sig-wrap py" id="job_utilities.compositing_override">
+<span class="sig-prename descclassname"><span class="pre">job_utilities.</span></span><span class="sig-name descname"><span class="pre">compositing_override</span></span><span class="sig-paren">(</span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#job_utilities.compositing_override" title="job_utilities.compositing_override.compositing_func (Python parameter)"><span class="n"><span class="pre">compositing_func</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span></em></span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="desctype"><span class="pre">Generator</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span></span><a class="headerlink" href="#job_utilities.compositing_override" title="Link to this definition">¶</a></dt>
+<dd><p>Apply compositor override.</p>
+</dd></dl>
+
+<dl class="py function objdesc">
+<dt class="sig sig-object highlight sig-wrap py" id="job_utilities.cycles_override">
+<span class="sig-prename descclassname"><span class="pre">job_utilities.</span></span><span class="sig-name descname"><span class="pre">cycles_override</span></span><span class="sig-paren">(</span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#job_utilities.cycles_override" title="job_utilities.cycles_override.settings_func (Python parameter)"><span class="n"><span class="pre">settings_func</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span></em></span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="desctype"><span class="pre">Generator</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span></span><a class="headerlink" href="#job_utilities.cycles_override" title="Link to this definition">¶</a></dt>
+<dd><p>Apply Cycles settings override.</p>
+</dd></dl>
+
+<dl class="py function objdesc">
+<dt class="sig sig-object highlight sig-wrap py" id="job_utilities.global_material_override">
+<span class="sig-prename descclassname"><span class="pre">job_utilities.</span></span><span class="sig-name descname"><span class="pre">global_material_override</span></span><span class="sig-paren">(</span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#job_utilities.global_material_override" title="job_utilities.global_material_override.base_material (Python parameter)"><span class="n"><span class="pre">base_material</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">bpy.types.Material</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><code class="code python default_value docutils literal highlight highlight-python"><span class="kc">None</span></code></em></span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="desctype"><span class="pre">Generator</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span></span><a class="headerlink" href="#job_utilities.global_material_override" title="Link to this definition">¶</a></dt>
+<dd><p>Apply global material override for all objects in a scene.</p>
+</dd></dl>
+
+<dl class="py function objdesc">
+<dt class="sig sig-object highlight sig-wrap py" id="job_utilities.hide_override">
+<span class="sig-prename descclassname"><span class="pre">job_utilities.</span></span><span class="sig-name descname"><span class="pre">hide_override</span></span><span class="sig-paren">(</span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#job_utilities.hide_override" title="job_utilities.hide_override.components (Python parameter)"><span class="n"><span class="pre">components</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">bpy.types.Object</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">bpy.types.Object</span><span class="p"><span class="pre">]</span></span></span></span></em>, </span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#job_utilities.hide_override" title="job_utilities.hide_override.hide_viewport (Python parameter)"><span class="n"><span class="pre">hide_viewport</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">bool</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><code class="code python default_value docutils literal highlight highlight-python"><span class="kc">False</span></code></em></span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="desctype"><span class="pre">Generator</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span></span><a class="headerlink" href="#job_utilities.hide_override" title="Link to this definition">¶</a></dt>
+<dd><p>Apply hide from render override for components from provided list.</p>
+</dd></dl>
+
+<dl class="py function objdesc">
+<dt class="sig sig-object highlight sig-wrap py" id="job_utilities.holdout_override">
+<span class="sig-prename descclassname"><span class="pre">job_utilities.</span></span><span class="sig-name descname"><span class="pre">holdout_override</span></span><span class="sig-paren">(</span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#job_utilities.holdout_override" title="job_utilities.holdout_override.components (Python parameter)"><span class="n"><span class="pre">components</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">bpy.types.Object</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">bpy.types.Object</span><span class="p"><span class="pre">]</span></span></span></span></em>, </span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#job_utilities.holdout_override" title="job_utilities.holdout_override.full (Python parameter)"><span class="n"><span class="pre">full</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">bool</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><code class="code python default_value docutils literal highlight highlight-python"><span class="kc">False</span></code></em></span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="desctype"><span class="pre">Generator</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span></span><a class="headerlink" href="#job_utilities.holdout_override" title="Link to this definition">¶</a></dt>
+<dd><p>Apply holdout override for components from provided list. If non_obstructed</p>
+</dd></dl>
+
+<dl class="py function objdesc">
+<dt class="sig sig-object highlight sig-wrap py" id="job_utilities.material_override">
+<span class="sig-prename descclassname"><span class="pre">job_utilities.</span></span><span class="sig-name descname"><span class="pre">material_override</span></span><span class="sig-paren">(</span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#job_utilities.material_override" title="job_utilities.material_override.base_material (Python parameter)"><span class="n"><span class="pre">base_material</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">bpy.types.Material</span></span></span></em>, </span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#job_utilities.material_override" title="job_utilities.material_override.components (Python parameter)"><span class="n"><span class="pre">components</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">bpy.types.Object</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">bpy.types.Object</span><span class="p"><span class="pre">]</span></span></span></span></em></span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="desctype"><span class="pre">Generator</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span></span><a class="headerlink" href="#job_utilities.material_override" title="Link to this definition">¶</a></dt>
+<dd><p>Override all materials with the specified one for all components in the list.
+Skips linked objects. Generates backup dictionary with the material slots for revert.</p>
+</dd></dl>
+
+<dl class="py function objdesc">
+<dt class="sig sig-object highlight sig-wrap py" id="job_utilities.position_override">
+<span class="sig-prename descclassname"><span class="pre">job_utilities.</span></span><span class="sig-name descname"><span class="pre">position_override</span></span><span class="sig-paren">(</span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#job_utilities.position_override" title="job_utilities.position_override.components (Python parameter)"><span class="n"><span class="pre">components</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">bpy.types.Object</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">bpy.types.Object</span><span class="p"><span class="pre">]</span></span></span></span></em>, </span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#job_utilities.position_override" title="job_utilities.position_override.position_func (Python parameter)"><span class="n"><span class="pre">position_func</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">bpy.types.Object</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span></em>, </span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#job_utilities.position_override" title="job_utilities.position_override.rendered_obj (Python parameter)"><span class="n"><span class="pre">rendered_obj</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">bpy.types.Object</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><code class="code python default_value docutils literal highlight highlight-python"><span class="kc">None</span></code></em></span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="desctype"><span class="pre">Generator</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span></span><a class="headerlink" href="#job_utilities.position_override" title="Link to this definition">¶</a></dt>
+<dd><p>Temporarily change location or rotation of components from provided list by updating their delta location and Euler rotation. Uses function passed as argument.
+Restore original location and rotation in the end. By passing rendered object to the context manager,
+light will be adjusted to the updated model position as well.</p>
+</dd></dl>
+
+<dl class="py function objdesc">
+<dt class="sig sig-object highlight sig-wrap py" id="job_utilities.shadow_override">
+<span class="sig-prename descclassname"><span class="pre">job_utilities.</span></span><span class="sig-name descname"><span class="pre">shadow_override</span></span><span class="sig-paren">(</span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#job_utilities.shadow_override" title="job_utilities.shadow_override.components (Python parameter)"><span class="n"><span class="pre">components</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">bpy.types.Object</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">bpy.types.Object</span><span class="p"><span class="pre">]</span></span></span></span></em></span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="desctype"><span class="pre">Generator</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span></span><a class="headerlink" href="#job_utilities.shadow_override" title="Link to this definition">¶</a></dt>
+<dd><p>Override object visibility to shadow rays.</p>
+</dd></dl>
+
+<dl class="py function objdesc">
+<dt class="sig sig-object highlight sig-wrap py" id="job_utilities.user_animation_override">
+<span class="sig-prename descclassname"><span class="pre">job_utilities.</span></span><span class="sig-name descname"><span class="pre">user_animation_override</span></span><span class="sig-paren">(</span><span class="sig-param-decl"><em class="sig-param"><a class="n reference internal" href="#job_utilities.user_animation_override" title="job_utilities.user_animation_override.studio (Python parameter)"><span class="n"><span class="pre">studio</span></span></a><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="desctype"><span class="pre">pcbooth.modules.studio.Studio</span></span></span></em></span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="desctype"><span class="pre">Generator</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span></span><a class="headerlink" href="#job_utilities.user_animation_override" title="Link to this definition">¶</a></dt>
+<dd><p>Temporarily override PCBooth animations with user-defined keyframes from the rendered .blend file.
+Removes any changes made within this context upon exit.</p>
+</dd></dl>
+
+
+
+  <hr>
+<div class="md-source-file">
+  <small>
+    
+      Last update:
+      2025-11-19
+    
+  </small>
+</div>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+    <nav class="md-footer__inner md-grid" aria-label="Footer" >
+      
+        
+        <a href="blendcfg.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Configuring blendcfg.yaml" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Configuring blendcfg.yaml
+            </div>
+          </div>
+        </a>
+      
+      
+    </nav>
+  
+  
+  
+  <div class="md-footer-meta md-typeset">
+    
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-footer-copyright__highlight">
+        Copyright &#169; Antmicro, 2025.
+        
+    </div>
+  
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+      
+      
+    
+    <a href="https://github.com/antmicro" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    </a>
+  
+    
+    
+      
+      
+    
+    <a href="https://twitter.com/antmicro" target="_blank" rel="noopener" title="twitter.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+    
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": ".", "features": ["toc.integrate"], "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    
+      
+        <script src="_static/sphinx_immaterial_theme.f9d9eeeb247ace16c.min.js?v=8ec58cb5"></script>
+        <script src="_static/tabs.js?v=3ee01567"></script>
+    
+  </body>
+</html>
